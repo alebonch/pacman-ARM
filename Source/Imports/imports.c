@@ -2,9 +2,39 @@
 #include "../TouchPanel/TouchPanel.h"
 #include "../GLCD/GLCD.h"
 #include "stdio.h"
-#include "time.h"
+#include "CAN/CAN.h"
 
-/*
+		char directions[4][2] = {
+    {0, -1}, // LEFT
+    {0, 1},  // RIGHT
+    {-1, 0}, // UP
+    {1, 0}   // DOWN
+		};
+		char ghost[8][8]= {
+        {0, 0, 0, 1, 1, 0, 0, 0}, // Top row
+        {0, 0, 1, 1, 1, 1, 0, 0}, 
+        {0, 1, 1, 1, 1, 1, 1, 0}, 
+        {0, 1, 1, 1, 1, 1, 1, 0}, 
+        {0, 1, 1, 1, 1, 1, 1, 0}, 
+        {0, 1, 1, 1, 1, 1, 1, 0}, // Legs (teeth-like pattern)
+        {0, 1, 1, 1, 1, 1, 1, 0}, 
+        {0, 1, 0, 1, 1, 0, 1, 0}  // Bottom row (teeth)
+    };
+		char eye_sprite[8][8] = {
+        {0, 0, 0, 0, 0, 0, 0, 0}, 
+        {0, 0, 0, 0, 0, 0, 0, 0}, 
+        {0, 0, 1, 0, 0, 1, 0, 0}, 
+        {0, 0, 1, 0, 0, 1, 0, 0}, 
+        {0, 0, 0, 0, 0, 0, 0, 0}, 
+        {0, 0, 0, 0, 0, 0, 0, 0}, 
+        {0, 0, 0, 0, 0, 0, 0, 0}, 
+        {0, 0, 0, 0, 0, 0, 0, 0}
+    };
+	char rowDirs[] = {0, 0, -1, 1}; // X: Lateralità
+	char colDirs[] = {-1, 1, 0, 0}; // Y: Verticalità
+	char life, startup, direction, stateOfGame, timeToExpel, respawn, step, paused, kills;
+	char escapeRoute[6]= {UP, UP, RIGHT, RIGHT, UP, UP};
+		/*
  0: Vuoto
  1: Muro
  2: Point
@@ -12,7 +42,7 @@
  4: TP-Left
  5: TP-Right
 */
-		char board[HEIGTH][LENGTH] = {
+		char board[HEIGHT][LENGTH] = {
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 
         {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
         {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
@@ -25,7 +55,7 @@
         {1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1},
         {1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1},
         {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
+        {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
         {1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1},
 				{4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5},
         {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1}, 
@@ -45,31 +75,35 @@
         {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
-		struct pg pacman;
+		struct pg pacman, blinky;
 		uint8_t elapsed_time = 0;
 		uint8_t wait = 0;
-		char direction;
-		int punteggio;
+		uint16_t punteggio;
 		char buffer[100];
-		char life;
-		struct pg power_pills_coord[6];
-		
-//13, 23 pacman starting point
 void InitializeGame(){
  pacman.posX = pacmanStartingX;
  pacman.posY = pacmanStartingY;
+ blinky.posX = blinkyStartingX;
+ blinky.posY = blinkyStartingY;
  direction=0;
  punteggio=0;
+ paused=0;
+ kills=0;
+ step=0;
  life = 1;
+ stateOfGame=0;
  Draw_Map();
- Generate_Power_Pills_Coord();
- init_timer(0, 0x001C4B40); 						    /* 8us * 25MHz = 200 ~= 0xC8 */
- init_timer(1, 0x17D7840);
+ //Generate_Power_Pills_Coord();
+ init_timer(3, 0x001C4B40); 						    
+ init_timer(1, 0x17D7840); //0x17D7840
+ //init_timer(2, 0x17D7840);
+ startup = 1;
+ elapsed_time = 1;
  PauseHandler();
 }
 void Draw_Map(){
  int i, j, current_value;
-	/*
+	
  LCD_DrawLine(90, 114, 110, 114, Blue);
  LCD_DrawLine(90, 114, 90, 150, Blue);
  LCD_DrawLine(90, 150, 150, 150, Blue);
@@ -255,15 +289,15 @@ void Draw_Map(){
  LCD_DrawLine(198, 222, 186, 222, Blue);
  LCD_DrawLine(198, 222, 198, 198, Blue);
  LCD_DrawLine(214, 198, 198, 198, Blue);
- LCD_DrawLine(214, 198, 214, 186, Blue); */
-  for(i = 0; i < HEIGTH; i++){
+ LCD_DrawLine(214, 198, 214, 186, Blue); 
+  for(i = 0; i < HEIGHT; i++){
   for(j = 0; j < LENGTH; j++){
    current_value = board[i][j];
    
    switch(current_value){ 
     case 1:
      //Draw_Wall((j * RATIO) + xPadding, (i * RATIO) + yPadding, Blue, RATIO, RATIO);
-			Draw_Brick((j * RATIO) + xPadding, (i * RATIO) + yPadding, Blue, RATIO);
+			//Draw_Brick((j * RATIO) + xPadding, (i * RATIO) + yPadding, Blue, RATIO);
      break;
 		 case 2:
      Draw_Point((j * RATIO) + xPadding, (i * RATIO) + yPadding);
@@ -273,15 +307,18 @@ void Draw_Map(){
   }
  }
  
- Draw_Circle(Yellow, RATIO); // (23*8)+16=25*8
+ Draw_Circle(pacman.posX, pacman.posY, Yellow, RATIO); // (23*8)+16=25*8
+ Draw_Ghost(blinky.posX , blinky.posY , Red);
  GUI_Text(0, 0, (uint8_t *) "SCORE:", Red, Black);
  sprintf(buffer, "%d", punteggio);
  GUI_Text(52, 0, (uint8_t *) buffer, Red, Black);
  GUI_Text(160, 0, (uint8_t *) "TIME: ", Red, Black);
  sprintf(buffer, "%d", elapsed_time);
  GUI_Text(208, 0, (uint8_t *) buffer, Red, Black);
- GUI_Text(0, 300, (uint8_t *) "LIFE COUNT: ", Red, Black);
  DrawLife();
+ sprintf(buffer, "%d", life);
+ GUI_Text(16,300,(uint8_t *) buffer, Red, Black);
+ GUI_Text(24,300,(uint8_t *) "X", Red, Black);
 }
 void Draw_Wall(int current_X, int current_Y, int color, int ratio1, int ratio2){
  int i, j;
@@ -298,7 +335,7 @@ void Draw_Point(int current_X, int current_Y){
  
  LCD_SetPoint(current_X + halfcellPadding, current_Y + halfcellPadding, Magenta);
 }
-void Draw_Circle(int color, int radius){
+void Draw_Circle(int current_X, int current_Y ,int color, int radius){
 	int r = radius / 2; 
   int x, y;
 
@@ -322,12 +359,33 @@ void Draw_Circle(int color, int radius){
 								if (!(dy == -r || dy == r || dx == -r || dx == r || 
                       (direction == 0 && dx == -r) || (direction == 1 && (dy == r || dx == r || dx == -r)) || 
                       (direction == 2 && dx == r) || (direction == 3 && (dy == -r || dx == r || dx == -r))) && !mouth) {
-                    LCD_SetPoint((pacman.posX * RATIO + xPadding) + x + r, (pacman.posY * RATIO + yPadding) + y + r, color);
+                    LCD_SetPoint((current_X * RATIO + xPadding) + x + r, (current_Y * RATIO + yPadding) + y + r, color);
                 }
             }
         }
     }
 }
+void Draw_Ghost(int current_X, int current_Y, int color) {
+	int x,y;
+     for (y = 0; y < RATIO; y++) {
+        for (x = 0; x < RATIO; x++) {
+            if (ghost[y][x]) {
+                LCD_SetPoint((current_X * RATIO + xPadding) + x, (current_Y * RATIO + yPadding) + y, color);
+            }
+        }
+    }
+
+    // Draw the eyes (white pixels)
+    for (y = 0; y < RATIO; y++) {
+        for (x = 0; x < RATIO; x++) {
+            if (eye_sprite[y][x]) {
+                LCD_SetPoint((current_X * RATIO + xPadding) + x, (current_Y * RATIO + yPadding) + y, White);
+            }
+        }
+    }
+}
+
+
 void Move_Pacman(){
 	/*
 		3 down
@@ -338,7 +396,7 @@ void Move_Pacman(){
 	static int checkpoint = 1000;
 	Draw_Wall((pacman.posX*RATIO)+xPadding, (pacman.posY*RATIO) +yPadding, Black, RATIO, RATIO);
 	switch(direction){
-		case 0:
+		case LEFT:
 			if(board[pacman.posY][pacman.posX-1]==4){
 				pacman.posX=26;  //teleport
 			}
@@ -346,7 +404,7 @@ void Move_Pacman(){
 				pacman.posX--;
 			}
 			break;
-		case 1:
+		case RIGHT:
 			if(board[pacman.posY][pacman.posX+1]==5){
 				pacman.posX=1;  //teleport
 			}
@@ -355,60 +413,76 @@ void Move_Pacman(){
 			}
 			break;
 			
-		case 2:
+		case UP:
 			if(board[pacman.posY-1][pacman.posX]!=1){
 				pacman.posY--;
 			}
 			break;
-		case 3:
+		case DOWN:
 			if(board[pacman.posY+1][pacman.posX]!=1){
 				pacman.posY++;
 			}
 			break;
 	}
-		Draw_Circle(Yellow, RATIO);
+		Draw_Circle(pacman.posX, pacman.posY, Yellow, RATIO);
 		if(board[pacman.posY][pacman.posX]==2){
 						board[pacman.posY][pacman.posX]=0;
 						punteggio+=smallPillScore;
 					}
-		if(board[pacman.posY][pacman.posX]==3){
+		if(board[pacman.posY][pacman.posX]==3 && stateOfGame!=0 && stateOfGame!=4){
 						board[pacman.posY][pacman.posX]=0;
 						punteggio+=powerPillScore;
+						if (stateOfGame!=0){
+							stateOfGame = 2;
+								timeToExpel=elapsed_time+10;}
 					}
 		if(punteggio>=checkpoint){
 						life++;
-						DrawLife();
 						checkpoint += 1000;
 		}
-		sprintf(buffer, "%d", punteggio);
-		GUI_Text(52, 0, (uint8_t *) buffer, Red, Black);	
-		if(punteggio==MAXSCORE)
+		//UpdateGameStatus(punteggio, life, GAME_DURATION - elapsed_time);
+		//sprintf(buffer, "%d", punteggio);
+		//GUI_Text(52, 0, (uint8_t *) buffer, Red, Black);
+			
+		if(punteggio==MAXSCORE + kills * 100)
 			Victory();
 }
 
 
 void PauseHandler(){
-	static char pause = 0;
-	if(pause){
+	if(paused){
+				if(startup){
+				startup=0;
+				wait = elapsed_time % MAX_WAIT;
+				if(wait<MIN_WAIT)
+					wait=MIN_WAIT;
+				disable_timer(1);
+				elapsed_time=0;
+				}
 				Draw_Wall(96, 120, Black, 48, 24);
-				pause=0;
-				enable_timer(0);
-				enable_timer(1);}
+				paused=0;
+				enable_timer(1);
+	      //enable_timer(2);
+				}
 	else{
-					disable_timer(0);
 					disable_timer(1);
-					pause=1;
+					//disable_timer(2);
+					paused=1;
 					GUI_Text(100, 124, (uint8_t *) "PAUSE", Red, White);
+				if(startup){
+						enable_timer(1);
+						enable_timer(3);}
 				}
 }
 
 void GameOver(){
-			disable_timer(0);
+			disable_timer(3);
 			disable_timer(1);
+			//disable_timer(2);
 			init_RIT(0xFFFFFFF);
 			GUI_Text(84, 124, (uint8_t *) "GAME OVER", Red, White);}
 void Victory(){
-			disable_timer(0);
+			disable_timer(3);
 			disable_timer(1);
 			init_RIT(0xFFFFFFF);
 			GUI_Text(88, 124, (uint8_t *) "VICTORY!", Blue, Red);}
@@ -434,38 +508,25 @@ void DrawLife(){
             float right = fx2 * fy3;    // fx^2 * fy^3
 
             if (left3 - right <= 0) {
-                LCD_SetPoint(life * 16 + x + 80, 300 + y, Red);
+                LCD_SetPoint(x, 300 + y, Red);
             }
         }
     }
 }
 void Generate_Power_Pills_Coord(){
-	time_t t;
 	int i = 0, x, y;
-	
-	srand((unsigned)time(&t));
-	wait = rand() % MAX_WAIT;
 	do{
-		x = rand() % LENGTH;
-		y = rand() % HEIGTH;
-		
+		x = rand() % punteggio;
+		y = x % HEIGHT;
+		x = x % LENGTH;		
 		if(board[y][x] == 2){
-			board[y][x] = 0;
-			power_pills_coord[i].posX = x;
-			power_pills_coord[i].posY = y;
+			board[y][x] = 3;
 			i++;
+			Draw_PowerPills(x*RATIO + xPadding,y*RATIO + yPadding,Magenta);
 		}
 	} while(i < POWER_PILL_SLOTS);
 }
 
-void Place_Power_Pills(){
-	int i;
-	
-	for(i = 0; i < POWER_PILL_SLOTS; i++){
-		board[power_pills_coord[i].posY][power_pills_coord[i].posX] = 3;
-		Draw_PowerPills((power_pills_coord[i].posX * RATIO) + xPadding, (power_pills_coord[i].posY * RATIO) + yPadding, Magenta);
-	}
-}
 void Draw_PowerPills(int current_X, int current_Y, int color) {
     int r = RATIO / 3;  // Raggio del cerchio
     int x, y;
@@ -496,5 +557,215 @@ void Draw_Brick(int current_X, int current_Y, int color, int ratio){
 	LCD_DrawLine(current_X + ratio - 1, current_Y + ratio - 1, current_X, current_Y + ratio - 1, color);
 	LCD_DrawLine(current_X + ratio - 1, current_Y + ratio - 1, current_X + ratio - 1, current_Y , color);
 }
+
+
+void MoveBlinky(){
+	int direction,color;
 	
-/* In larghezza 8:1, in altezza 8:1*/
+	Draw_Wall((blinky.posX*RATIO)+xPadding, (blinky.posY*RATIO) +yPadding, Black, RATIO, RATIO);
+	switch(board[blinky.posY][blinky.posX]){
+
+		case 2:
+     Draw_Point((blinky.posX * RATIO) + xPadding, (blinky.posY * RATIO) + yPadding);
+		break;
+		case 3:
+			Draw_PowerPills((blinky.posX * RATIO) + xPadding, (blinky.posY * RATIO) + yPadding,Magenta);
+		break;
+	}
+	switch(stateOfGame){
+		case outOfBox:
+			direction = escapeRoute[step];
+			step++;
+			if(step==6){
+				stateOfGame=1;
+				LCD_DrawLine(112, 116, 128, 116, Magenta);
+			}
+			color=Red;
+			break;
+		case chase:
+			direction = chaseMode();
+			color=Red;
+			break;
+		case frieghtened:
+			direction = frightenedMode();
+			color=Blue;
+	}
+	switch(direction){
+		case LEFT:
+			blinky.posX --;
+			break;
+		case RIGHT:
+			blinky.posX++;
+			break;
+		case UP:
+			blinky.posY --;
+			break;
+		case DOWN:
+			blinky.posY++;
+			break;
+	}
+	Draw_Ghost(blinky.posX, blinky.posY, color);
+}
+
+char frightenedMode(){ char distX, distY, rndm;
+		static char lastMove = 4;
+    distX = pacman.posX - blinky.posX;
+    distY = pacman.posY - blinky.posY;
+
+    if (distX < 0)
+        distX *= -1;
+
+    if (distY < 0)
+        distY *= -1;
+		if( blinky.posX== 27 || blinky.posX==0){
+			lastMove = blinky.posX==0 ? RIGHT : LEFT;
+			return lastMove;
+		} else{
+			if (distY > distX) {
+					if (blinky.posY < pacman.posY && board[blinky.posY - 1][blinky.posX] != 1 && lastMove != DOWN){
+							lastMove=UP;
+							return UP;}
+					else if (blinky.posY > pacman.posY && board[blinky.posY + 1][blinky.posX] != 1 && lastMove != UP){
+							lastMove=DOWN;
+							return DOWN;}
+					else if (blinky.posX < pacman.posX && board[blinky.posY][blinky.posX - 1] != 1 && lastMove != RIGHT){
+							return LEFT;}
+					else if (blinky.posX > pacman.posX && board[blinky.posY][blinky.posX + 1] != 1 && lastMove != LEFT){
+							return RIGHT;}
+			} else {
+					if (blinky.posX < pacman.posX && board[blinky.posY][blinky.posX - 1] != 1 && lastMove != RIGHT){
+						lastMove=LEFT;
+							return LEFT;}
+					else if (blinky.posX > pacman.posX && board[blinky.posY][blinky.posX + 1] != 1 && lastMove != LEFT){
+						lastMove=RIGHT;
+							return RIGHT;}
+					if (blinky.posY < pacman.posY && board[blinky.posY - 1][blinky.posX] != 1 && lastMove != DOWN){
+							lastMove=UP;
+							return UP;}
+					else if (blinky.posY > pacman.posY && board[blinky.posY + 1][blinky.posX] != 1 && lastMove != UP){
+						lastMove=DOWN;
+							return DOWN;}
+			}}
+
+			if (board[blinky.posY - 1][blinky.posX] != 1  && lastMove != DOWN){
+						lastMove=UP;
+            return UP;}
+				else if (board[blinky.posY][blinky.posX - 1] != 1  && lastMove != RIGHT){
+					lastMove=LEFT;
+            return LEFT;}
+        else if ( board[blinky.posY + 1][blinky.posX] != 1  && lastMove != UP){
+					lastMove=DOWN;
+            return DOWN;}
+        else if (board[blinky.posY][blinky.posX + 1] != 1 && lastMove != LEFT){
+					lastMove=RIGHT;
+            return RIGHT;}
+    return -1;}
+char chaseMode() {
+    char distX, distY, rndm;
+		static char lastMove = 4;
+    distX = pacman.posX - blinky.posX;
+    distY = pacman.posY - blinky.posY;
+		
+    if (distX < 0)
+        distX *= -1;
+
+    if (distY < 0)
+        distY *= -1;
+if( blinky.posX== 27 || blinky.posX==0){
+			lastMove = blinky.posX==0 ? RIGHT : LEFT;
+			return lastMove;
+		} else{
+    if (distY > distX) {
+        if (blinky.posY > pacman.posY && board[blinky.posY - 1][blinky.posX] != 1 && lastMove != DOWN){
+						lastMove=UP;
+            return UP;}
+        else if (blinky.posY < pacman.posY && board[blinky.posY + 1][blinky.posX] != 1 && lastMove != UP){
+						lastMove=DOWN;
+            return DOWN;}
+        else if (blinky.posX > pacman.posX && board[blinky.posY][blinky.posX - 1] != 1 && lastMove != RIGHT){
+            return LEFT;}
+        else if (blinky.posX < pacman.posX && board[blinky.posY][blinky.posX + 1] != 1 && lastMove != LEFT){
+            return RIGHT;}
+    } else {
+        if (blinky.posX > pacman.posX && board[blinky.posY][blinky.posX - 1] != 1 && lastMove != RIGHT){
+					lastMove=LEFT;
+            return LEFT;}
+        else if (blinky.posX < pacman.posX && board[blinky.posY][blinky.posX + 1] != 1 && lastMove != LEFT){
+					lastMove=RIGHT;
+            return RIGHT;}
+        if (blinky.posY > pacman.posY && board[blinky.posY - 1][blinky.posX] != 1 && lastMove != DOWN){
+						lastMove=UP;
+            return UP;}
+        else if (blinky.posY < pacman.posY && board[blinky.posY + 1][blinky.posX] != 1 && lastMove != UP){
+					lastMove=DOWN;
+            return DOWN;}
+    }}
+
+				if (board[blinky.posY - 1][blinky.posX] != 1  && lastMove != DOWN){
+						lastMove=UP;
+            return UP;}
+				else if (board[blinky.posY][blinky.posX - 1] != 1  && lastMove != RIGHT){
+					lastMove=LEFT;
+            return LEFT;}
+        else if ( board[blinky.posY + 1][blinky.posX] != 1  && lastMove != UP){
+					lastMove=DOWN;
+            return DOWN;}
+        else if (board[blinky.posY][blinky.posX + 1] != 1 && lastMove != LEFT){
+					lastMove=RIGHT;
+            return RIGHT;}
+    return -1;
+}
+void sendResults(){
+	CAN_TxMsg.data[0] = ((punteggio) & 0xFF00) >> 8;
+	CAN_TxMsg.data[1] = punteggio & 0xFF;
+	CAN_TxMsg.data[2] = life;
+	uint8_t tempo;
+	tempo = GAME_DURATION-elapsed_time;
+	CAN_TxMsg.data[3] = tempo;
+	CAN_TxMsg.len=4;
+	CAN_TxMsg.id=2;
+	CAN_TxMsg.format=STANDARD_FORMAT;
+	CAN_TxMsg.type=DATA_FRAME;
+	CAN_wrMsg (1, &CAN_TxMsg);
+	
+}
+void respawnBlinky(){
+stateOfGame=0;
+step=0;
+//enable_timer(2);
+	}
+
+void UpdateGameStatus(int score, char vite, char time){
+	 sprintf(buffer, "%d", score);
+	 GUI_Text(52, 0, (uint8_t *) buffer, Red, Black);
+	 sprintf(buffer, "%d", time);
+	if(time<10){
+		Draw_Wall(216,0,Black,8,16);}
+		GUI_Text(208, 0, (uint8_t *) buffer, Red, Black);
+	 sprintf(buffer, "%d", vite);
+	 GUI_Text(16,300,(uint8_t *) buffer, Red, Black);
+}
+void collisionManager(){
+	switch(stateOfGame){
+				case 1:
+					if(blinky.posX==pacman.posX && blinky.posY == pacman.posY){
+						life--;
+						Draw_Wall(life*RATIO*2+80, 300, Black, RATIO*2,RATIO*2);
+						if(life==0)	GameOver();
+						Draw_Wall((pacman.posX*RATIO)+xPadding, (pacman.posY*RATIO) +yPadding, Black, RATIO, RATIO);
+						pacman.posX=pacmanStartingX;
+						pacman.posY=pacmanStartingY;
+						Draw_Circle(pacman.posX, pacman.posY, Yellow, RATIO);}
+					break;
+				case 2:
+					if(blinky.posX==pacman.posX && blinky.posY == pacman.posY){
+						stateOfGame=4;
+						respawn=elapsed_time+3;
+						punteggio += powerPillScore;
+						kills++;
+						blinky.posX=blinkyStartingX;
+						blinky.posY=blinkyStartingY;}
+					break;
+						default:
+							break;
+}}

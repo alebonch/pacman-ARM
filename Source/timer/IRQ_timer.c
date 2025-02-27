@@ -25,13 +25,98 @@
 **
 ******************************************************************************/
 
-extern char direction;
+extern char direction, startup, timeToExpel, stateOfGame, respawn, step, paused;
 extern char buffer[100];
-extern uint8_t elapsed_time;
+char state;
+extern uint8_t elapsed_time, button_down;
 extern uint8_t wait;
+	
+int frequencies_pacman[45] = {410, 467, 523, 576, 627, 673, 714, 749, 778,
+    799, 813, 819, 817, 807, 789, 764, 732, 694, 
+    650, 602, 550, 495, 438, 381, 324, 270, 217,
+    169, 125, 87 , 55 , 30 , 12 , 2  , 0  , 6  ,   
+    20 , 41 , 70 , 105, 146, 193, 243, 297, 353} ;
 void TIMER0_IRQHandler (void)
 {
- static int up = 0, down = 0, left = 0, right = 0;
+	static int i = 0;
+		int currentValue;
+		currentValue = frequencies_pacman[i];
+		currentValue -= 410;
+		currentValue /= 1;
+		currentValue += 410;
+		LPC_DAC->DACR = frequencies_pacman[i] <<6;
+		i++;
+		if(i==45) i=0;
+		state=0;
+  LPC_TIM0->IR = 1;   /* clear interrupt flag */
+  return;
+}
+
+
+/******************************************************************************
+** Function name:  Timer1_IRQHandler
+**
+** Descriptions:  Timer/Counter 1 interrupt handler
+**
+** parameters:   None
+** Returned value:  None
+**
+******************************************************************************/
+void TIMER1_IRQHandler (void)
+{
+	elapsed_time++;
+	if(!startup){
+		if(elapsed_time==GAME_DURATION){
+			sprintf(buffer, "%d", elapsed_time);
+			GUI_Text(208, 0, (uint8_t *) buffer, Red, Black);
+			GameOver();
+		}
+	if(stateOfGame==2 && elapsed_time ==timeToExpel){
+	stateOfGame=1;
+	}
+	if(elapsed_time==respawn){
+	respawnBlinky();
+	}
+	if(elapsed_time == wait) Generate_Power_Pills_Coord();
+	}
+	LPC_TIM1->IR = 1;   /* clear interrupt flag */
+  return;
+}
+void TIMER2_IRQHandler (void)
+{
+	
+	disable_timer(0);
+	
+	LPC_TIM2->IR = 1;   /* clear interrupt flag */
+  return;
+}
+
+void TIMER3_IRQHandler (void){
+	static int up = 0, down = 0, left = 0, right = 0, counter = 0;
+	uint8_t treshhold;
+		
+	if(!paused){
+	if(stateOfGame!=DEAD){
+	if(stateOfGame ==chase){
+		if (elapsed_time >= 0 && elapsed_time < 20){
+					treshhold = 2;
+				}
+				else{
+					treshhold = 1;
+				}
+			}
+			else{
+				treshhold = 3;
+			}
+	if (counter >= treshhold & stateOfGame!=4) {
+				MoveBlinky();
+				counter = 0; 
+			}
+			else{
+				counter++;
+			}
+		}
+	collisionManager();
  if((LPC_GPIO1->FIOPIN & (1<<29)) == 0){ 
   /* Joytick UP pressed */
   up++;
@@ -122,36 +207,12 @@ void TIMER0_IRQHandler (void)
  }
  
  Move_Pacman();
- 
-  LPC_TIM0->IR = 1;   /* clear interrupt flag */
+ sendResults();
+ collisionManager();
+}
+	LPC_TIM3->IR = 1;
   return;
 }
-
-
-/******************************************************************************
-** Function name:  Timer1_IRQHandler
-**
-** Descriptions:  Timer/Counter 1 interrupt handler
-**
-** parameters:   None
-** Returned value:  None
-**
-******************************************************************************/
-void TIMER1_IRQHandler (void)
-{
-	elapsed_time++;
-	sprintf(buffer, "%d", GAME_DURATION-elapsed_time);
-		if(elapsed_time==GAME_DURATION){
-			GameOver();
-		}
-	if(elapsed_time>50){
-		Draw_Wall(216,0,Black,8,16);}
-	GUI_Text(208, 0, (uint8_t *) buffer, Red, Black);
-	if(elapsed_time == wait) Place_Power_Pills();
-  LPC_TIM1->IR = 1;   /* clear interrupt flag */
-  return;
-}
-
 /******************************************************************************
 **                            End Of File
 ******************************************************************************/
