@@ -1,18 +1,79 @@
-# 1 "Source/button_EXINT/lib_button.c"
+# 1 "Source/music/music.c"
 # 1 "<built-in>" 1
 # 1 "<built-in>" 3
 # 393 "<built-in>" 3
 # 1 "<command line>" 1
 # 1 "<built-in>" 2
-# 1 "Source/button_EXINT/lib_button.c" 2
+# 1 "Source/music/music.c" 2
+# 1 "Source/music\\music.h" 1
 
-# 1 "Source/button_EXINT\\button.h" 1
-void BUTTON_init(void);
 
-void EINT1_IRQHandler(void);
-void EINT2_IRQHandler(void);
-void EINT3_IRQHandler(void);
-# 3 "Source/button_EXINT/lib_button.c" 2
+
+
+//Default: 1.65
+
+
+
+
+
+
+
+typedef char BOOL;
+
+
+
+typedef enum note_durations
+{
+ time_semibiscroma = (unsigned int)(0x17D7840 * 1 * 1.5 / 64.0f + 0.5), // 1/128
+ time_biscroma = (unsigned int)(0x17D7840 * 1 * 1.5 / 32.0f + 0.5), // 1/64
+ time_semicroma = (unsigned int)(0x17D7840 * 1 * 1.5 / 16.0f + 0.5), // 1/32
+ time_croma = (unsigned int)(0x17D7840 * 1 * 1.5 / 8.0f + 0.5), // 1/16
+ time_semiminima = (unsigned int)(0x17D7840 * 1 * 1.5 / 4.0f + 0.5), // 1/4
+ time_minima = (unsigned int)(0x17D7840 * 1 * 1.5 / 2.0f + 0.5), // 1/2
+ time_semibreve = (unsigned int)(0x17D7840 * 1 * 1.5 + 0.5), // 1
+} NOTE_DURATION;
+
+typedef enum frequencies {
+    // Existing frequencies
+    a2b = 5351, // 103Hz k=5351
+    b2 = 4500, // 123Hz k=4500
+    c3b = 4370, // 127Hz k=4370
+    c3 = 4240, // 131Hz k=4240
+    d3 = 3779, // 147Hz k=3779
+    e3 = 3367, // 165Hz k=3367
+    f3 = 3175, // 175Hz k=3175
+    g3 = 2834, // 196Hz k=2834
+    a3b = 2670, // 208Hz k=2670
+    a3 = 2525, // 220Hz k=2525
+    b3 = 2249, // 247Hz k=2249
+    c4 = 2120, // 262Hz k=2120
+    d4 = 1890, // 294Hz k=1890
+    e4 = 1684, // 330Hz k=1684
+    f4 = 1592, // 349Hz k=1592
+    g4 = 1417, // 392Hz k=1417
+    a4 = 1263, // 440Hz k=1263
+    b4 = 1125, // 494Hz k=1125
+    c5 = 1062, // 523Hz k=1062
+  b5 = 55, // 987.77Hz k=55 B5
+    // New frequencies needed for Pacman theme
+    d5 = 946, // 587Hz k=946
+    e5 = 843, // 659Hz k=843
+    f5 = 795, // 698Hz k=795
+    g5 = 709, // 784Hz k=709
+    a5 = 631, // 880Hz k=631
+
+    pause = 0 // DO NOT SOUND
+} FREQUENCY;
+
+typedef struct
+{
+ FREQUENCY freq;
+ NOTE_DURATION duration;
+} NOTE;
+
+void playNote(NOTE note);
+BOOL isNotePlaying(void);
+# 2 "Source/music/music.c" 2
 # 1 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 1
 # 41 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 typedef enum IRQn
@@ -1789,28 +1850,34 @@ typedef struct
        uint32_t RESERVED8;
   volatile uint32_t Module_ID;
 } LPC_EMAC_TypeDef;
-# 4 "Source/button_EXINT/lib_button.c" 2
+# 3 "Source/music/music.c" 2
+# 1 "Source/music\\../timer/timer.h" 1
+# 14 "Source/music\\../timer/timer.h"
+extern uint32_t init_timer( uint8_t timer_num, uint32_t timerInterval );
+extern void enable_timer( uint8_t timer_num );
+extern void disable_timer( uint8_t timer_num );
+extern void reset_timer( uint8_t timer_num );
 
+extern void TIMER0_IRQHandler (void);
+extern void TIMER1_IRQHandler (void);
+extern void TIMER2_IRQHandler (void);
+extern void TIMER3_IRQHandler (void);
+# 4 "Source/music/music.c" 2
 
+void playNote(NOTE note)
+{
+ if(note.freq != pause)
+ {
+  reset_timer(0);
+  init_timer(0, note.freq);
+  enable_timer(0);
+ }
+ reset_timer(2);
+ init_timer(2, note.duration);
+ enable_timer(2);
+}
 
-
-void BUTTON_init(void) {
-
-  ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 20);
-  ((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIODIR &= ~(1 << 10);
-
-  ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 22);
-  ((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIODIR &= ~(1 << 11);
-
-  ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 24);
-  ((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIODIR &= ~(1 << 12);
-
-  ((LPC_SC_TypeDef *) ((0x40080000UL) + 0x7C000) )->EXTMODE = 0x7;
-
-  __NVIC_EnableIRQ(EINT2_IRQn);
- __NVIC_SetPriority(EINT2_IRQn, 1);
-  __NVIC_EnableIRQ(EINT1_IRQn);
- __NVIC_SetPriority(EINT1_IRQn, 2);
-  __NVIC_EnableIRQ(EINT0_IRQn);
- __NVIC_SetPriority(EINT0_IRQn, 0);
+BOOL isNotePlaying(void)
+{
+ return ((((LPC_TIM_TypeDef *) ((0x40000000UL) + 0x04000) )->TCR != 0));
 }

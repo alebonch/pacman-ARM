@@ -1,18 +1,11 @@
-# 1 "Source/button_EXINT/lib_button.c"
+# 1 "Source/CAN/lib_CAN.c"
 # 1 "<built-in>" 1
 # 1 "<built-in>" 3
 # 393 "<built-in>" 3
 # 1 "<command line>" 1
 # 1 "<built-in>" 2
-# 1 "Source/button_EXINT/lib_button.c" 2
-
-# 1 "Source/button_EXINT\\button.h" 1
-void BUTTON_init(void);
-
-void EINT1_IRQHandler(void);
-void EINT2_IRQHandler(void);
-void EINT3_IRQHandler(void);
-# 3 "Source/button_EXINT/lib_button.c" 2
+# 1 "Source/CAN/lib_CAN.c" 2
+# 16 "Source/CAN/lib_CAN.c"
 # 1 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 1
 # 41 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 typedef enum IRQn
@@ -1789,28 +1782,373 @@ typedef struct
        uint32_t RESERVED8;
   volatile uint32_t Module_ID;
 } LPC_EMAC_TypeDef;
-# 4 "Source/button_EXINT/lib_button.c" 2
+# 17 "Source/CAN/lib_CAN.c" 2
+# 1 "Source/CAN\\CAN.h" 1
+# 19 "Source/CAN\\CAN.h"
+# 1 "Source/CAN\\../TouchPanel/TouchPanel.h" 1
+# 30 "Source/CAN\\../TouchPanel/TouchPanel.h"
+typedef struct POINT
+{
+   uint16_t x;
+   uint16_t y;
+}Coordinate;
+
+
+typedef struct Matrix
+{
+long double An,
+            Bn,
+            Cn,
+            Dn,
+            En,
+            Fn,
+            Divider ;
+} Matrix ;
+
+
+extern Coordinate ScreenSample[3];
+extern Coordinate DisplaySample[3];
+extern Matrix matrix ;
+extern Coordinate display ;
+# 76 "Source/CAN\\../TouchPanel/TouchPanel.h"
+void TP_Init(void);
+Coordinate *Read_Ads7846(void);
+void TouchPanel_Calibrate(void);
+void DrawCross(uint16_t Xpos,uint16_t Ypos);
+void TP_DrawPoint(uint16_t Xpos,uint16_t Ypos);
+uint8_t setCalibrationMatrix( Coordinate * displayPtr,Coordinate * screenPtr,Matrix * matrixPtr);
+uint8_t getDisplayPoint(Coordinate * displayPtr,Coordinate * screenPtr,Matrix * matrixPtr );
+# 20 "Source/CAN\\CAN.h" 2
 
 
 
 
-void BUTTON_init(void) {
 
-  ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 20);
-  ((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIODIR &= ~(1 << 10);
 
-  ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 22);
-  ((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIODIR &= ~(1 << 11);
+extern uint32_t result;
+extern uint8_t icr;
 
-  ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 24);
-  ((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIODIR &= ~(1 << 12);
+typedef struct {
+  unsigned int id;
+  unsigned char data[8];
+  unsigned char len;
+  unsigned char format;
+  unsigned char type;
+} CAN_msg;
 
-  ((LPC_SC_TypeDef *) ((0x40080000UL) + 0x7C000) )->EXTMODE = 0x7;
 
-  __NVIC_EnableIRQ(EINT2_IRQn);
- __NVIC_SetPriority(EINT2_IRQn, 1);
-  __NVIC_EnableIRQ(EINT1_IRQn);
- __NVIC_SetPriority(EINT1_IRQn, 2);
-  __NVIC_EnableIRQ(EINT0_IRQn);
- __NVIC_SetPriority(EINT0_IRQn, 0);
+void CAN_setup (uint32_t ctrl);
+void CAN_start (uint32_t ctrl);
+void CAN_waitReady (uint32_t ctrl);
+void CAN_wrMsg (uint32_t ctrl, CAN_msg *msg);
+void CAN_rdMsg (uint32_t ctrl, CAN_msg *msg);
+void CAN_wrFilter (uint32_t ctrl, uint32_t id, uint8_t filter_type);
+void CAN_Init (void);
+
+extern CAN_msg CAN_TxMsg;
+extern CAN_msg CAN_RxMsg;
+# 18 "Source/CAN/lib_CAN.c" 2
+# 1 "Source/CAN\\../GLCD/GLCD.h" 1
+# 91 "Source/CAN\\../GLCD/GLCD.h"
+void LCD_Initialization(void);
+void LCD_Clear(uint16_t Color);
+uint16_t LCD_GetPoint(uint16_t Xpos,uint16_t Ypos);
+void LCD_SetPoint(uint16_t Xpos,uint16_t Ypos,uint16_t point);
+void LCD_DrawLine( uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1 , uint16_t color );
+void PutChar( uint16_t Xpos, uint16_t Ypos, uint8_t ASCI, uint16_t charColor, uint16_t bkColor );
+void GUI_Text(uint16_t Xpos, uint16_t Ypos, uint8_t *str,uint16_t Color, uint16_t bkColor);
+# 19 "Source/CAN/lib_CAN.c" 2
+
+uint8_t icr = 0x0; //icr and result must be global in order to work with both real and simulated landtiger.
+uint32_t result = 0;
+CAN_msg CAN_TxMsg;
+CAN_msg CAN_RxMsg;
+
+//unsigned int CAN_TxRdy[2] = {0,0};
+//unsigned int CAN_RxRdy[2] = {0,0};
+
+
+
+
+
+
+
+const uint32_t CAN_BIT_TIME[] = { 0,
+                                           0,
+                                           0,
+                                           0,
+                                  0x0001C000,
+                                           0,
+                                  0x0012C000,
+                                           0,
+                                  0x0023C000,
+                                           0,
+                                  0x0025C000,
+                                           0,
+                                  0x0036C000,
+                                           0,
+                                           0,
+                                  0x0048C000,
+                                  0x0049C000,
+                                };
+
+
+
+
+static void CAN_cfgBaudrate (uint32_t ctrl, uint32_t baudrate) {
+  LPC_CAN_TypeDef *pCAN = (ctrl == 1) ? ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x44000) ) : ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x48000) );
+
+  uint32_t nominal_time;
+ result = 0;
+
+  if ((((100000000UL/4) / 1000000) % 6) == 0) {
+    nominal_time = 12;
+  } else {
+    nominal_time = 10;
+  }
+
+
+  result = ((100000000UL/4) / nominal_time) / baudrate - 1;
+  result &= 0x000003FF;
+  result |= CAN_BIT_TIME[nominal_time];
+
+  pCAN->BTR = result;
+}
+
+
+
+
+
+void CAN_setup (uint32_t ctrl) {
+  LPC_CAN_TypeDef *pCAN = (ctrl == 1) ? ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x44000) ) : ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x48000) );
+
+  if (ctrl == 1) {
+    ((LPC_SC_TypeDef *) ((0x40080000UL) + 0x7C000) )->PCONP |= (1 << 13);
+    ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL0 |= (1 << 0);
+    ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL0 |= (1 << 2);
+
+    __NVIC_EnableIRQ(CAN_IRQn);
+  } else {
+    ((LPC_SC_TypeDef *) ((0x40080000UL) + 0x7C000) )->PCONP |= (1 << 14);
+    ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL0 |= (1 << 9);
+    ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL0 |= (1 << 11);
+
+    __NVIC_EnableIRQ(CAN_IRQn);
+  }
+ __NVIC_SetPriority(CAN_IRQn, 3);
+
+  ((LPC_CANAF_TypeDef *) ((0x40000000UL) + 0x3C000) )->AFMR = 2;
+  pCAN->MOD = 1;
+  pCAN->IER = 0;
+  pCAN->GSR = 0;
+  CAN_cfgBaudrate(ctrl, 1000000);
+  pCAN->IER = 0x0003;
+}
+
+
+
+
+
+void CAN_start (uint32_t ctrl) {
+  LPC_CAN_TypeDef *pCAN = (ctrl == 1) ? ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x44000) ) : ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x48000) );
+
+  pCAN->MOD = 0;
+}
+
+
+
+
+void CAN_waitReady (uint32_t ctrl) {
+  LPC_CAN_TypeDef *pCAN = (ctrl == 1) ? ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x44000) ) : ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x48000) );
+
+  while ((pCAN->SR & (1<<2)) == 0);
+}
+
+
+
+
+void CAN_wrMsg (uint32_t ctrl, CAN_msg *msg) {
+  LPC_CAN_TypeDef *pCAN = (ctrl == 1) ? ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x44000) ) : ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x48000) );
+  uint32_t CANData;
+
+  CANData = ((((uint32_t) msg->len) << 16) & 0x000F0000) |
+            (msg->format == 1 ) * 0x80000000 |
+            (msg->type == 1) * 0x40000000;
+
+  if (pCAN->SR & (1<<2)) {
+    pCAN->TFI1 = CANData;
+    pCAN->TID1 = msg->id;
+    pCAN->TDA1 = *(uint32_t *) &msg->data[0];
+    pCAN->TDB1 = *(uint32_t *) &msg->data[4];
+    pCAN->CMR = 0x21;
+  }
+}
+
+
+
+
+void CAN_rdMsg (uint32_t ctrl, CAN_msg *msg) {
+  LPC_CAN_TypeDef *pCAN = (ctrl == 1) ? ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x44000) ) : ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x48000) );
+  uint32_t CANData;
+
+
+  CANData = pCAN->RFS;
+  msg->format = (CANData & 0x80000000) == 0x80000000;
+  msg->type = (CANData & 0x40000000) == 0x40000000;
+  msg->len = ((uint8_t)(CANData >> 16)) & 0x0F;
+
+  msg->id = pCAN->RID;
+
+  if (msg->type == 0) {
+    *(uint32_t *) &msg->data[0] = pCAN->RDA;
+    *(uint32_t *) &msg->data[4] = pCAN->RDB;
+  }
+}
+
+
+
+
+
+void CAN_wrFilter (uint32_t ctrl, uint32_t id, uint8_t format) {
+  static int CAN_std_cnt = 0;
+  static int CAN_ext_cnt = 0;
+         uint32_t buf0, buf1;
+         int cnt1, cnt2, bound1;
+
+
+  if ((((CAN_std_cnt + 1) >> 1) + CAN_ext_cnt) >= 512)
+    return;
+
+
+
+  ((LPC_CANAF_TypeDef *) ((0x40000000UL) + 0x3C000) )->AFMR = 0x00000001;
+
+  if (format == 0) {
+    id |= (ctrl-1) << 13;
+    id &= 0x0000F7FF;
+
+
+
+    if ((CAN_std_cnt & 0x0001) == 0 && CAN_ext_cnt != 0) {
+      cnt1 = (CAN_std_cnt >> 1);
+      bound1 = CAN_ext_cnt;
+      buf0 = ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1];
+      while (bound1--) {
+        cnt1++;
+        buf1 = ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1];
+        ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] = buf0;
+        buf0 = buf1;
+      }
+    }
+
+    if (CAN_std_cnt == 0) {
+      ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[0] = 0x0000FFFF | (id << 16);
+    } else if (CAN_std_cnt == 1) {
+      if ((((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[0] >> 16) > id)
+        ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[0] = (((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[0] >> 16) | (id << 16);
+      else
+        ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[0] = (((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[0] & 0xFFFF0000) | id;
+    } else {
+
+      cnt1 = 0;
+      cnt2 = CAN_std_cnt;
+      bound1 = (CAN_std_cnt - 1) >> 1;
+      while (cnt1 <= bound1) {
+        if ((((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] >> 16) > id) {
+          cnt2 = cnt1 * 2;
+          break;
+        }
+        if ((((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] & 0x0000FFFF) > id) {
+          cnt2 = cnt1 * 2 + 1;
+          break;
+        }
+        cnt1++;
+      }
+
+      if (cnt1 > bound1) {
+        if ((CAN_std_cnt & 0x0001) == 0)
+          ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] = 0x0000FFFF | (id << 16);
+        else
+          ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] = (((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] & 0xFFFF0000) | id;
+      } else {
+        buf0 = ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1];
+        if ((cnt2 & 0x0001) == 0)
+          buf1 = (id << 16) | (buf0 >> 16);
+        else
+          buf1 = (buf0 & 0xFFFF0000) | id;
+
+        ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] = buf1;
+
+        bound1 = CAN_std_cnt >> 1;
+
+        while (cnt1 < bound1) {
+          cnt1++;
+          buf1 = ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1];
+          ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] = (buf1 >> 16) | (buf0 << 16);
+          buf0 = buf1;
+        }
+
+        if ((CAN_std_cnt & 0x0001) == 0)
+          ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] = (((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] & 0xFFFF0000) | (0x0000FFFF);
+      }
+    }
+    CAN_std_cnt++;
+  } else {
+    id |= (ctrl-1) << 29;
+
+    cnt1 = ((CAN_std_cnt + 1) >> 1);
+    cnt2 = 0;
+    while (cnt2 < CAN_ext_cnt) {
+      if (((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] > id)
+        break;
+      cnt1++;
+      cnt2++;
+    }
+
+    buf0 = ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1];
+    ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] = id;
+
+    CAN_ext_cnt++;
+
+    bound1 = CAN_ext_cnt - 1;
+
+    while (cnt2 < bound1) {
+      cnt1++;
+      cnt2++;
+      buf1 = ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1];
+      ((LPC_CANAF_RAM_TypeDef *) ((0x40000000UL) + 0x38000))->mask[cnt1] = buf0;
+      buf0 = buf1;
+    }
+  }
+
+
+  buf0 = ((CAN_std_cnt + 1) >> 1) << 2;
+  buf1 = buf0 + (CAN_ext_cnt << 2);
+
+
+  ((LPC_CANAF_TypeDef *) ((0x40000000UL) + 0x3C000) )->SFF_sa = 0;
+  ((LPC_CANAF_TypeDef *) ((0x40000000UL) + 0x3C000) )->SFF_GRP_sa = buf0;
+  ((LPC_CANAF_TypeDef *) ((0x40000000UL) + 0x3C000) )->EFF_sa = buf0;
+  ((LPC_CANAF_TypeDef *) ((0x40000000UL) + 0x3C000) )->EFF_GRP_sa = buf1;
+  ((LPC_CANAF_TypeDef *) ((0x40000000UL) + 0x3C000) )->ENDofTable = buf1;
+
+  ((LPC_CANAF_TypeDef *) ((0x40000000UL) + 0x3C000) )->AFMR = 0x00000000;
+}
+
+
+
+
+void CAN_Init (void) {
+
+  CAN_setup (1);
+  CAN_setup (2);
+
+  CAN_wrFilter (1, 1, 0);
+ CAN_wrFilter (2, 2, 0);
+
+  CAN_start (1);
+  CAN_start (2);
+
+  CAN_waitReady (1);
+  CAN_waitReady (2);
 }

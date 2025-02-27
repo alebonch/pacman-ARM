@@ -6,32 +6,45 @@
 # 1 "<built-in>" 2
 # 1 "Source/Imports/imports.c" 2
 # 1 "Source/Imports\\imports.h" 1
-# 15 "Source/Imports\\imports.h"
+# 28 "Source/Imports\\imports.h"
 struct pg{
  int posX;
  int posY;
 };
 
+typedef struct {
+    int row;
+    int col;
+    int distance;
+} Cell;
 
 void InitializeGame();
 void Draw_Wall(int current_X, int current_Y, int color, int ratio1, int ratio2);
 void Draw_Point(int current_X, int current_Y);
-void Draw_Circle(int color, int radius);
+void Draw_Circle(int current_X, int current_Y, int color, int radius);
 void Move_Pacman();
 void PauseHandler();
 void Victory();
 void GameOver();
 void DrawLife();
-void Place_Power_Pills();
 void Generate_Power_Pills_Coord();
 void Draw_PowerPills(int current_X, int current_Y, int color);
 void Draw_Map();
 void Draw_Brick(int current_X, int current_Y, int color, int ratio);
+void Draw_Ghost(int current_X, int current_Y, int color);
+int is_valid(int x, int y, char board[31][28], int visited[31][28]);
+void MoveBlinky();
+char chaseMode();
+char frightenedMode();
+void respawnBlinky();
+void UpdateGameStatus(int score, char vite, char time);
+void sendResults();
+void collisionManager();
 # 2 "Source/Imports/imports.c" 2
 # 1 "Source/Imports\\../TouchPanel/TouchPanel.h" 1
 # 27 "Source/Imports\\../TouchPanel/TouchPanel.h"
-# 1 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h" 1
-# 41 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h"
+# 1 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 1
+# 41 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 typedef enum IRQn
 {
 
@@ -83,7 +96,7 @@ typedef enum IRQn
   USBActivity_IRQn = 33,
   CANActivity_IRQn = 34,
 } IRQn_Type;
-# 106 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h"
+# 106 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 # 1 "./Source/CMSIS_core\\core_cm3.h" 1
 # 29 "./Source/CMSIS_core\\core_cm3.h" 3
 
@@ -91,8 +104,8 @@ typedef enum IRQn
 
 
 
-# 1 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 1 3
-# 56 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 3
+# 1 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 1 3
+# 56 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 3
 typedef signed char int8_t;
 typedef signed short int int16_t;
 typedef signed int int32_t;
@@ -993,9 +1006,9 @@ static __inline int32_t ITM_CheckChar (void)
     return (1);
   }
 }
-# 107 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h" 2
-# 1 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\system_LPC17xx.h" 1
-# 49 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\system_LPC17xx.h"
+# 107 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 2
+# 1 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\system_LPC17xx.h" 1
+# 49 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\system_LPC17xx.h"
 extern uint32_t SystemCoreClock;
 
 
@@ -1012,8 +1025,8 @@ extern void SystemInit (void);
 
 
 extern void SystemCoreClockUpdate (void);
-# 108 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h" 2
-# 120 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h"
+# 108 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 2
+# 120 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 typedef struct
 {
   volatile uint32_t FLASHCFG;
@@ -1259,6 +1272,7 @@ typedef struct
   volatile uint8_t FDR;
        uint8_t RESERVED5[7];
   volatile uint8_t TER;
+       uint8_t RESERVED6[3];
 } LPC_UART_TypeDef;
 
 
@@ -1272,6 +1286,7 @@ typedef struct
   };
   union {
   volatile uint8_t DLM;
+       uint8_t RESERVED1[3];
   volatile uint32_t IER;
   };
   union {
@@ -1279,26 +1294,27 @@ typedef struct
   volatile uint8_t FCR;
   };
   volatile uint8_t LCR;
-       uint8_t RESERVED1[3];
-  volatile uint8_t MCR;
        uint8_t RESERVED2[3];
-  volatile const uint8_t LSR;
+  volatile uint8_t MCR;
        uint8_t RESERVED3[3];
-  volatile const uint8_t MSR;
+  volatile const uint8_t LSR;
        uint8_t RESERVED4[3];
-  volatile uint8_t SCR;
+  volatile const uint8_t MSR;
        uint8_t RESERVED5[3];
+  volatile uint8_t SCR;
+       uint8_t RESERVED6[3];
   volatile uint32_t ACR;
-       uint32_t RESERVED6;
-  volatile uint32_t FDR;
        uint32_t RESERVED7;
+  volatile uint32_t FDR;
+       uint32_t RESERVED8;
   volatile uint8_t TER;
-       uint8_t RESERVED8[27];
+       uint8_t RESERVED9[27];
   volatile uint8_t RS485CTRL;
-       uint8_t RESERVED9[3];
-  volatile uint8_t ADRMATCH;
        uint8_t RESERVED10[3];
+  volatile uint8_t ADRMATCH;
+       uint8_t RESERVED11[3];
   volatile uint8_t RS485DLY;
+       uint8_t RESERVED12[3];
 } LPC_UART1_TypeDef;
 
 
@@ -1481,6 +1497,7 @@ typedef struct
   volatile uint32_t DACR;
   volatile uint32_t DACCTRL;
   volatile uint16_t DACCNTVAL;
+       uint16_t RESERVED;
 } LPC_DAC_TypeDef;
 
 
@@ -1847,12 +1864,12 @@ void LCD_DrawLine( uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1 , uint16_t
 void PutChar( uint16_t Xpos, uint16_t Ypos, uint8_t ASCI, uint16_t charColor, uint16_t bkColor );
 void GUI_Text(uint16_t Xpos, uint16_t Ypos, uint8_t *str,uint16_t Color, uint16_t bkColor);
 # 4 "Source/Imports/imports.c" 2
-# 1 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 1 3
-# 53 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 1 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 1 3
+# 53 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
     typedef unsigned int size_t;
-# 68 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 68 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
     typedef __builtin_va_list __va_list;
-# 87 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 87 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 typedef struct __fpos_t_struct {
     unsigned long long int __pos;
 
@@ -1864,9 +1881,9 @@ typedef struct __fpos_t_struct {
         unsigned int __state1, __state2;
     } __mbstate;
 } fpos_t;
-# 108 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 108 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 typedef struct __FILE FILE;
-# 119 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 119 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 struct __FILE {
     union {
         long __FILE_alignment;
@@ -1877,10 +1894,10 @@ struct __FILE {
 
     } __FILE_opaque;
 };
-# 138 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 138 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern FILE __stdin, __stdout, __stderr;
 extern FILE *__aeabi_stdin, *__aeabi_stdout, *__aeabi_stderr;
-# 224 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 224 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int remove(const char * ) __attribute__((__nonnull__(1)));
 
 
@@ -1890,7 +1907,7 @@ extern __attribute__((__nothrow__)) int remove(const char * ) __attribute__((__n
 
 
 extern __attribute__((__nothrow__)) int rename(const char * , const char * ) __attribute__((__nonnull__(1,2)));
-# 243 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 243 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) FILE *tmpfile(void);
 
 
@@ -1899,18 +1916,18 @@ extern __attribute__((__nothrow__)) FILE *tmpfile(void);
 
 
 extern __attribute__((__nothrow__)) char *tmpnam(char * );
-# 265 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 265 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int fclose(FILE * ) __attribute__((__nonnull__(1)));
-# 275 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 275 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int fflush(FILE * );
-# 285 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 285 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) FILE *fopen(const char * __restrict ,
                            const char * __restrict ) __attribute__((__nonnull__(1,2)));
-# 329 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 329 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) FILE *freopen(const char * __restrict ,
                     const char * __restrict ,
                     FILE * __restrict ) __attribute__((__nonnull__(2,3)));
-# 342 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 342 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) void setbuf(FILE * __restrict ,
                     char * __restrict ) __attribute__((__nonnull__(1)));
 
@@ -1922,11 +1939,11 @@ extern __attribute__((__nothrow__)) void setbuf(FILE * __restrict ,
 extern __attribute__((__nothrow__)) int setvbuf(FILE * __restrict ,
                    char * __restrict ,
                    int , size_t ) __attribute__((__nonnull__(1)));
-# 370 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 370 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 #pragma __printf_args
 extern __attribute__((__nothrow__)) int fprintf(FILE * __restrict ,
                     const char * __restrict , ...) __attribute__((__nonnull__(1,2)));
-# 393 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 393 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 #pragma __printf_args
 extern __attribute__((__nothrow__)) int _fprintf(FILE * __restrict ,
                      const char * __restrict , ...) __attribute__((__nonnull__(1,2)));
@@ -1971,7 +1988,7 @@ extern __attribute__((__nothrow__)) int _sprintf(char * __restrict , const char 
 #pragma __printf_args
 extern __attribute__((__nothrow__)) int __ARM_snprintf(char * __restrict , size_t ,
                      const char * __restrict , ...) __attribute__((__nonnull__(3)));
-# 460 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 460 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 #pragma __printf_args
 extern __attribute__((__nothrow__)) int _snprintf(char * __restrict , size_t ,
                       const char * __restrict , ...) __attribute__((__nonnull__(3)));
@@ -1983,7 +2000,7 @@ extern __attribute__((__nothrow__)) int _snprintf(char * __restrict , size_t ,
 #pragma __scanf_args
 extern __attribute__((__nothrow__)) int fscanf(FILE * __restrict ,
                     const char * __restrict , ...) __attribute__((__nonnull__(1,2)));
-# 503 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 503 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 #pragma __scanf_args
 extern __attribute__((__nothrow__)) int _fscanf(FILE * __restrict ,
                      const char * __restrict , ...) __attribute__((__nonnull__(1,2)));
@@ -2012,11 +2029,11 @@ extern __attribute__((__nothrow__)) int _scanf(const char * __restrict , ...) __
 #pragma __scanf_args
 extern __attribute__((__nothrow__)) int sscanf(const char * __restrict ,
                     const char * __restrict , ...) __attribute__((__nonnull__(1,2)));
-# 541 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 541 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 #pragma __scanf_args
 extern __attribute__((__nothrow__)) int _sscanf(const char * __restrict ,
                      const char * __restrict , ...) __attribute__((__nonnull__(1,2)));
-# 555 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 555 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int _vfscanf(FILE * __restrict , const char * __restrict , __va_list) __attribute__((__nonnull__(1,2)));
 extern __attribute__((__nothrow__)) int _vscanf(const char * __restrict , __va_list) __attribute__((__nonnull__(1)));
 extern __attribute__((__nothrow__)) int _vsscanf(const char * __restrict , const char * __restrict , __va_list) __attribute__((__nonnull__(1,2)));
@@ -2038,13 +2055,13 @@ extern __attribute__((__nothrow__)) int _vprintf(const char * __restrict , __va_
 
 extern __attribute__((__nothrow__)) int vfprintf(FILE * __restrict ,
                     const char * __restrict , __va_list ) __attribute__((__nonnull__(1,2)));
-# 584 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 584 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int vsprintf(char * __restrict ,
                      const char * __restrict , __va_list ) __attribute__((__nonnull__(1,2)));
-# 594 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 594 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int __ARM_vsnprintf(char * __restrict , size_t ,
                      const char * __restrict , __va_list ) __attribute__((__nonnull__(3)));
-# 609 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 609 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int _vsprintf(char * __restrict ,
                       const char * __restrict , __va_list ) __attribute__((__nonnull__(1,2)));
 
@@ -2061,18 +2078,18 @@ extern __attribute__((__nothrow__)) int _vfprintf(FILE * __restrict ,
 
 extern __attribute__((__nothrow__)) int _vsnprintf(char * __restrict , size_t ,
                       const char * __restrict , __va_list ) __attribute__((__nonnull__(3)));
-# 635 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 635 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 #pragma __printf_args
 extern __attribute__((__nothrow__)) int __ARM_asprintf(char ** , const char * __restrict , ...) __attribute__((__nonnull__(2)));
 extern __attribute__((__nothrow__)) int __ARM_vasprintf(char ** , const char * __restrict , __va_list ) __attribute__((__nonnull__(2)));
-# 649 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 649 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int fgetc(FILE * ) __attribute__((__nonnull__(1)));
-# 659 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 659 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) char *fgets(char * __restrict , int ,
                     FILE * __restrict ) __attribute__((__nonnull__(1,3)));
-# 673 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 673 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int fputc(int , FILE * ) __attribute__((__nonnull__(2)));
-# 683 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 683 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int fputs(const char * __restrict , FILE * __restrict ) __attribute__((__nonnull__(1,2)));
 
 
@@ -2081,13 +2098,13 @@ extern __attribute__((__nothrow__)) int fputs(const char * __restrict , FILE * _
 
 
 extern __attribute__((__nothrow__)) int getc(FILE * ) __attribute__((__nonnull__(1)));
-# 704 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 704 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
     extern __attribute__((__nothrow__)) int (getchar)(void);
-# 713 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 713 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) char *gets(char * ) __attribute__((__nonnull__(1)));
-# 725 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 725 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int putc(int , FILE * ) __attribute__((__nonnull__(2)));
-# 737 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 737 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
     extern __attribute__((__nothrow__)) int (putchar)(int );
 
 
@@ -2104,26 +2121,26 @@ extern __attribute__((__nothrow__)) int puts(const char * ) __attribute__((__non
 
 
 extern __attribute__((__nothrow__)) int ungetc(int , FILE * ) __attribute__((__nonnull__(2)));
-# 778 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 778 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) size_t fread(void * __restrict ,
                     size_t , size_t , FILE * __restrict ) __attribute__((__nonnull__(1,4)));
-# 794 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 794 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) size_t __fread_bytes_avail(void * __restrict ,
                     size_t , FILE * __restrict ) __attribute__((__nonnull__(1,3)));
-# 810 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 810 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) size_t fwrite(const void * __restrict ,
                     size_t , size_t , FILE * __restrict ) __attribute__((__nonnull__(1,4)));
-# 822 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 822 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int fgetpos(FILE * __restrict , fpos_t * __restrict ) __attribute__((__nonnull__(1,2)));
-# 833 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 833 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int fseek(FILE * , long int , int ) __attribute__((__nonnull__(1)));
-# 850 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 850 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int fsetpos(FILE * __restrict , const fpos_t * __restrict ) __attribute__((__nonnull__(1,2)));
-# 863 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 863 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) long int ftell(FILE * ) __attribute__((__nonnull__(1)));
-# 877 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 877 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) void rewind(FILE * ) __attribute__((__nonnull__(1)));
-# 886 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 886 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) void clearerr(FILE * ) __attribute__((__nonnull__(1)));
 
 
@@ -2143,7 +2160,7 @@ extern __attribute__((__nothrow__)) int ferror(FILE * ) __attribute__((__nonnull
 
 
 extern __attribute__((__nothrow__)) void perror(const char * );
-# 917 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
+# 917 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdio.h" 3
 extern __attribute__((__nothrow__)) int _fisatty(FILE * ) __attribute__((__nonnull__(1)));
 
 
@@ -2151,86 +2168,63 @@ extern __attribute__((__nothrow__)) int _fisatty(FILE * ) __attribute__((__nonnu
 extern __attribute__((__nothrow__)) void __use_no_semihosting_swi(void);
 extern __attribute__((__nothrow__)) void __use_no_semihosting(void);
 # 5 "Source/Imports/imports.c" 2
-# 1 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\time.h" 1 3
-# 82 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\time.h" 3
-typedef unsigned int clock_t;
-typedef unsigned int time_t;
+# 1 "./Source\\CAN/CAN.h" 1
+# 26 "./Source\\CAN/CAN.h"
+extern uint32_t result;
+extern uint8_t icr;
+
+typedef struct {
+  unsigned int id;
+  unsigned char data[8];
+  unsigned char len;
+  unsigned char format;
+  unsigned char type;
+} CAN_msg;
 
 
+void CAN_setup (uint32_t ctrl);
+void CAN_start (uint32_t ctrl);
+void CAN_waitReady (uint32_t ctrl);
+void CAN_wrMsg (uint32_t ctrl, CAN_msg *msg);
+void CAN_rdMsg (uint32_t ctrl, CAN_msg *msg);
+void CAN_wrFilter (uint32_t ctrl, uint32_t id, uint8_t filter_type);
+void CAN_Init (void);
 
-
-
-
-struct tm {
-    int tm_sec;
-
-    int tm_min;
-    int tm_hour;
-    int tm_mday;
-    int tm_mon;
-    int tm_year;
-    int tm_wday;
-    int tm_yday;
-    int tm_isdst;
-    union {
-        struct {
-            int __extra_1, __extra_2;
-        };
-        struct {
-            long __extra_1_long, __extra_2_long;
-        };
-        struct {
-            char *__extra_1_cptr, *__extra_2_cptr;
-        };
-        struct {
-            void *__extra_1_vptr, *__extra_2_vptr;
-        };
-    };
-};
-# 127 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\time.h" 3
-extern __attribute__((__nothrow__)) clock_t clock(void);
-
-
-
-
-
-
-
-extern __attribute__((__nothrow__)) double difftime(time_t , time_t );
-
-
-
-
-extern __attribute__((__nothrow__)) time_t mktime(struct tm * ) __attribute__((__nonnull__(1)));
-# 156 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\time.h" 3
-extern __attribute__((__nothrow__)) time_t time(time_t * );
-# 166 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\time.h" 3
-extern __attribute__((__nothrow__)) char *asctime(const struct tm * ) __attribute__((__nonnull__(1)));
-extern __attribute__((__nothrow__)) char *_asctime_r(const struct tm * ,
-                                char * __restrict ) __attribute__((__nonnull__(1,2)));
-# 178 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\time.h" 3
-extern __attribute__((__nothrow__)) char *ctime(const time_t * ) __attribute__((__nonnull__(1)));
-
-
-
-
-
-
-extern __attribute__((__nothrow__)) struct tm *gmtime(const time_t * ) __attribute__((__nonnull__(1)));
-
-
-
-
-
-extern __attribute__((__nothrow__)) struct tm *localtime(const time_t * ) __attribute__((__nonnull__(1)));
-extern __attribute__((__nothrow__)) struct tm *_localtime_r(const time_t * __restrict ,
-                                       struct tm * __restrict ) __attribute__((__nonnull__(1,2)));
-# 203 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\time.h" 3
-extern __attribute__((__nothrow__)) size_t strftime(char * __restrict , size_t ,
-                       const char * __restrict ,
-                       const struct tm * __restrict ) __attribute__((__nonnull__(1,3,4)));
+extern CAN_msg CAN_TxMsg;
+extern CAN_msg CAN_RxMsg;
 # 6 "Source/Imports/imports.c" 2
-# 15 "Source/Imports/imports.c"
+
+  char directions[4][2] = {
+    {0, -1}, // 0
+    {0, 1}, // 1
+    {-1, 0}, // 2
+    {1, 0} // 3
+  };
+  char ghost[8][8]= {
+        {0, 0, 0, 1, 1, 0, 0, 0}, // Top row
+        {0, 0, 1, 1, 1, 1, 0, 0},
+        {0, 1, 1, 1, 1, 1, 1, 0},
+        {0, 1, 1, 1, 1, 1, 1, 0},
+        {0, 1, 1, 1, 1, 1, 1, 0},
+        {0, 1, 1, 1, 1, 1, 1, 0}, // Legs (teeth-like pattern)
+        {0, 1, 1, 1, 1, 1, 1, 0},
+        {0, 1, 0, 1, 1, 0, 1, 0} // Bottom row (teeth)
+    };
+  char eye_sprite[8][8] = {
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 1, 0, 0, 1, 0, 0},
+        {0, 0, 1, 0, 0, 1, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0}
+    };
+ char rowDirs[] = {0, 0, -1, 1}; // X: Lateralità
+ char colDirs[] = {-1, 1, 0, 0}; // Y: Verticalità
+ char life, startup, direction, stateOfGame, timeToExpel, respawn, step, paused, kills;
+ char escapeRoute[6]= {2, 2, 1, 1, 2, 2};
+# 45 "Source/Imports/imports.c"
   char board[31][28] = {
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
         {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
@@ -2244,7 +2238,7 @@ extern __attribute__((__nothrow__)) size_t strftime(char * __restrict , size_t ,
         {1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1},
         {1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1},
         {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
+        {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
         {1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1},
     {4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5},
         {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1},
@@ -2264,31 +2258,221 @@ extern __attribute__((__nothrow__)) size_t strftime(char * __restrict , size_t ,
         {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
-  struct pg pacman;
+  struct pg pacman, blinky;
   uint8_t elapsed_time = 0;
   uint8_t wait = 0;
-  char direction;
-  int punteggio;
+  uint16_t punteggio;
   char buffer[100];
-  char life;
-  struct pg power_pills_coord[6];
-
-//13, 23 pacman starting point
 void InitializeGame(){
  pacman.posX = 13;
  pacman.posY = 23;
+ blinky.posX = 11;
+ blinky.posY = 15;
  direction=0;
  punteggio=0;
+ paused=0;
+ kills=0;
+ step=0;
  life = 1;
+ stateOfGame=0;
  Draw_Map();
- Generate_Power_Pills_Coord();
- init_timer(0, 0x001C4B40);
- init_timer(1, 0x17D7840);
+ //Generate_Power_Pills_Coord();
+ init_timer(3, 0x001C4B40);
+ init_timer(1, 0x17D7840); //0x17D7840
+ //init_timer(2, 0x17D7840);
+ startup = 1;
+ elapsed_time = 1;
  PauseHandler();
 }
 void Draw_Map(){
  int i, j, current_value;
-# 259 "Source/Imports/imports.c"
+
+ LCD_DrawLine(90, 114, 110, 114, 0x001F);
+ LCD_DrawLine(90, 114, 90, 150, 0x001F);
+ LCD_DrawLine(90, 150, 150, 150, 0x001F);
+ LCD_DrawLine(150, 114, 150, 150, 0x001F);
+ LCD_DrawLine(150, 114, 130, 114, 0x001F);
+ LCD_DrawLine(130, 114, 130, 118, 0x001F);
+ LCD_DrawLine(130, 118, 146, 118, 0x001F);
+ LCD_DrawLine(146, 118, 146, 146, 0x001F);
+ LCD_DrawLine(94, 146, 146, 146, 0x001F);
+ LCD_DrawLine(94, 146, 94, 118, 0x001F);
+ LCD_DrawLine(94, 118, 110, 118, 0x001F);
+ LCD_DrawLine(90, 114, 110, 114, 0x001F);
+ LCD_DrawLine(110, 114, 110, 118, 0x001F);
+
+
+
+ LCD_DrawLine(226, 22, 226, 90, 0x001F);
+ LCD_DrawLine(232, 16, 232, 126, 0x001F);
+ LCD_DrawLine(232, 126, 186, 126, 0x001F);
+ LCD_DrawLine(186, 126, 186, 90, 0x001F);
+ LCD_DrawLine(186, 90, 226, 90, 0x001F);
+ LCD_DrawLine(8, 16, 232, 16, 0x001F);
+ LCD_DrawLine(8,16, 8, 126, 0x001F);
+ LCD_DrawLine(8,126, 54, 126, 0x001F);
+ LCD_DrawLine(54, 126, 54, 90, 0x001F);
+ LCD_DrawLine(54, 90, 14, 90, 0x001F);
+ LCD_DrawLine(14, 90, 14, 22, 0x001F);
+ LCD_DrawLine(14, 22, 114, 22, 0x001F);
+ LCD_DrawLine(114, 22, 114, 54, 0x001F);
+ LCD_DrawLine(126, 22, 226, 22, 0x001F);
+ LCD_DrawLine(126, 22, 126, 54, 0x001F);
+ LCD_DrawLine(126, 54, 114, 54, 0x001F);
+
+
+
+
+ LCD_DrawLine(14, 258, 226, 258, 0x001F);
+ LCD_DrawLine(8, 264, 232, 264, 0x001F);
+ LCD_DrawLine(8, 264, 8, 138, 0x001F);
+ LCD_DrawLine(8, 138, 54, 138, 0x001F);
+ LCD_DrawLine(54, 138, 54, 174, 0x001F);
+ LCD_DrawLine(14, 174, 54, 174, 0x001F);
+ LCD_DrawLine(14, 174, 14, 210, 0x001F);
+ LCD_DrawLine(14, 210, 30, 210, 0x001F);
+ LCD_DrawLine(30, 222, 30, 210, 0x001F);
+ LCD_DrawLine(30, 222, 14, 222, 0x001F);
+ LCD_DrawLine(14, 258, 14, 222, 0x001F);
+
+
+ LCD_DrawLine(232, 264, 232, 138, 0x001F);
+ LCD_DrawLine(232, 138, 186, 138, 0x001F);
+ LCD_DrawLine(186, 138, 186, 174, 0x001F);
+ LCD_DrawLine(186, 174, 226, 174, 0x001F);
+ LCD_DrawLine(226, 174, 226, 210, 0x001F);
+ LCD_DrawLine(210, 210, 226, 210, 0x001F);
+ LCD_DrawLine(210, 222, 210, 210, 0x001F);
+ LCD_DrawLine(210, 222, 226, 222, 0x001F);
+ LCD_DrawLine(226, 258, 226, 222, 0x001F);
+
+
+ LCD_DrawLine(26, 34, 54, 34, 0x001F);
+ LCD_DrawLine(26, 34, 26, 54, 0x001F);
+ LCD_DrawLine(54, 34, 54, 54, 0x001F);
+ LCD_DrawLine(26, 54, 54, 54, 0x001F);
+
+ LCD_DrawLine(214, 34, 186, 34, 0x001F);
+ LCD_DrawLine(214, 34, 214, 54, 0x001F);
+ LCD_DrawLine(186, 34, 186, 54, 0x001F);
+ LCD_DrawLine(214, 54, 186, 54, 0x001F);
+
+ LCD_DrawLine(66, 34, 102, 34, 0x001F);
+ LCD_DrawLine(66, 34, 66, 54, 0x001F);
+ LCD_DrawLine(102, 34, 102, 54, 0x001F);
+ LCD_DrawLine(66, 54, 102, 54, 0x001F);
+
+ LCD_DrawLine(174, 34, 138, 34, 0x001F);
+ LCD_DrawLine(174, 34, 174, 54, 0x001F);
+ LCD_DrawLine(138, 34, 138, 54, 0x001F);
+ LCD_DrawLine(174, 54, 138, 54, 0x001F);
+
+  LCD_DrawLine(26, 66, 54, 66, 0x001F);
+ LCD_DrawLine(26, 66, 26, 78, 0x001F);
+ LCD_DrawLine(54, 66, 54, 78, 0x001F);
+ LCD_DrawLine(26, 78, 54, 78, 0x001F);
+
+ LCD_DrawLine(214, 66, 186, 66, 0x001F);
+ LCD_DrawLine(214, 66, 214, 78, 0x001F);
+ LCD_DrawLine(186, 66, 186, 78, 0x001F);
+ LCD_DrawLine(214, 78, 186, 78, 0x001F);
+
+ LCD_DrawLine(174, 66, 174, 126, 0x001F);
+ LCD_DrawLine(174, 126, 162, 126, 0x001F);
+ LCD_DrawLine(162, 126, 162, 102, 0x001F);
+ LCD_DrawLine(162, 102, 138, 102, 0x001F);
+ LCD_DrawLine(174, 66, 162, 66, 0x001F);
+ LCD_DrawLine(162, 66, 162, 90, 0x001F);
+ LCD_DrawLine(162, 90, 138, 90, 0x001F);
+ LCD_DrawLine(138, 90, 138, 102, 0x001F);
+
+ LCD_DrawLine(66, 66, 66, 126, 0x001F);
+ LCD_DrawLine(66, 126, 78, 126, 0x001F);
+ LCD_DrawLine(78, 126, 78, 102, 0x001F);
+ LCD_DrawLine(78, 102, 102, 102, 0x001F);
+ LCD_DrawLine(66, 66, 78, 66, 0x001F);
+ LCD_DrawLine(78, 66, 78, 90, 0x001F);
+ LCD_DrawLine(78, 90, 102, 90, 0x001F);
+ LCD_DrawLine(102, 90, 102, 102, 0x001F);
+
+ LCD_DrawLine(114, 102, 126, 102, 0x001F);
+ LCD_DrawLine(114, 102, 114, 78, 0x001F);
+ LCD_DrawLine(90, 78, 114, 78, 0x001F);
+ LCD_DrawLine(90, 78, 90, 66, 0x001F);
+ LCD_DrawLine(126, 102, 126, 78, 0x001F);
+ LCD_DrawLine(126, 78, 150, 78, 0x001F);
+ LCD_DrawLine(150, 66, 150, 78, 0x001F);
+ LCD_DrawLine(90, 66, 150, 66, 0x001F);
+
+ LCD_DrawLine(114, 198, 126, 198, 0x001F);
+ LCD_DrawLine(114, 198, 114, 174, 0x001F);
+ LCD_DrawLine(90, 174, 114, 174, 0x001F);
+ LCD_DrawLine(90, 174, 90, 162, 0x001F);
+ LCD_DrawLine(126, 198, 126, 174, 0x001F);
+ LCD_DrawLine(126, 174, 150, 174, 0x001F);
+ LCD_DrawLine(150, 162, 150, 174, 0x001F);
+ LCD_DrawLine(90, 162, 150, 162, 0x001F);
+
+ LCD_DrawLine(114, 246, 126, 246, 0x001F);
+ LCD_DrawLine(114, 246, 114, 222, 0x001F);
+ LCD_DrawLine(90, 222, 114, 222, 0x001F);
+ LCD_DrawLine(90, 222, 90, 210, 0x001F);
+ LCD_DrawLine(126, 246, 126, 222, 0x001F);
+ LCD_DrawLine(126, 222, 150, 222, 0x001F);
+ LCD_DrawLine(150, 210, 150, 222, 0x001F);
+ LCD_DrawLine(90, 210, 150, 210, 0x001F);
+
+ LCD_DrawLine(102, 246, 26, 246, 0x001F);
+ LCD_DrawLine(102, 246, 102, 234, 0x001F);
+ LCD_DrawLine(102, 234, 78, 234, 0x001F);
+ LCD_DrawLine(78, 210, 78, 234, 0x001F);
+ LCD_DrawLine(78, 210, 66, 210, 0x001F);
+ LCD_DrawLine(66, 234, 66, 210, 0x001F);
+ LCD_DrawLine(66, 234, 26, 234, 0x001F);
+ LCD_DrawLine(26, 234, 26, 246, 0x001F);
+
+ LCD_DrawLine(138, 246, 214, 246, 0x001F);
+ LCD_DrawLine(138, 246, 138, 234, 0x001F);
+ LCD_DrawLine(138, 234, 162, 234, 0x001F);
+ LCD_DrawLine(162, 210, 162, 234, 0x001F);
+ LCD_DrawLine(162, 210, 174, 210, 0x001F);
+ LCD_DrawLine(174, 234, 174, 210, 0x001F);
+ LCD_DrawLine(174, 234, 214, 234, 0x001F);
+ LCD_DrawLine(214, 234, 214, 246, 0x001F);
+
+ LCD_DrawLine(66, 138, 78, 138, 0x001F);
+ LCD_DrawLine(78, 174, 78, 138, 0x001F);
+ LCD_DrawLine(66, 138, 66, 174, 0x001F);
+ LCD_DrawLine(66, 174, 78, 174, 0x001F);
+
+ LCD_DrawLine(66, 186, 102, 186, 0x001F);
+ LCD_DrawLine(66, 198, 66, 186, 0x001F);
+ LCD_DrawLine(66, 198, 102, 198, 0x001F);
+ LCD_DrawLine(102, 186, 102, 198, 0x001F);
+
+ LCD_DrawLine(54, 186, 26, 186, 0x001F);
+ LCD_DrawLine(54, 186, 54, 222, 0x001F);
+ LCD_DrawLine(54, 222, 42, 222, 0x001F);
+ LCD_DrawLine(42, 222, 42, 198, 0x001F);
+ LCD_DrawLine(26, 198, 42, 198, 0x001F);
+ LCD_DrawLine(26, 198, 26, 186, 0x001F);
+
+ LCD_DrawLine(174, 138, 162, 138, 0x001F);
+ LCD_DrawLine(174, 138, 174, 174, 0x001F);
+ LCD_DrawLine(174, 174, 162, 174, 0x001F);
+ LCD_DrawLine(162, 138, 162, 174, 0x001F);
+
+ LCD_DrawLine(174, 186, 138, 186, 0x001F);
+ LCD_DrawLine(174, 198, 174, 186, 0x001F);
+ LCD_DrawLine(174, 198, 138, 198, 0x001F);
+ LCD_DrawLine(138, 186, 138, 198, 0x001F);
+
+ LCD_DrawLine(186, 186, 214, 186, 0x001F);
+ LCD_DrawLine(186, 186, 186, 222, 0x001F);
+ LCD_DrawLine(198, 222, 186, 222, 0x001F);
+ LCD_DrawLine(198, 222, 198, 198, 0x001F);
+ LCD_DrawLine(214, 198, 198, 198, 0x001F);
+ LCD_DrawLine(214, 198, 214, 186, 0x001F);
   for(i = 0; i < 31; i++){
   for(j = 0; j < 28; j++){
    current_value = board[i][j];
@@ -2296,7 +2480,7 @@ void Draw_Map(){
    switch(current_value){
     case 1:
      //Draw_Wall((j * 8) + 8, (i * 8) + 16, 0x001F, 8, 8);
-   Draw_Brick((j * 8) + 8, (i * 8) + 16, 0x001F, 8);
+   //Draw_Brick((j * 8) + 8, (i * 8) + 16, 0x001F, 8);
      break;
    case 2:
      Draw_Point((j * 8) + 8, (i * 8) + 16);
@@ -2306,15 +2490,18 @@ void Draw_Map(){
   }
  }
 
- Draw_Circle(0xFFE0, 8); // (23*8)+16=25*8
+ Draw_Circle(pacman.posX, pacman.posY, 0xFFE0, 8); // (23*8)+16=25*8
+ Draw_Ghost(blinky.posX , blinky.posY , 0xF800);
  GUI_Text(0, 0, (uint8_t *) "SCORE:", 0xF800, 0x0000);
  sprintf(buffer, "%d", punteggio);
  GUI_Text(52, 0, (uint8_t *) buffer, 0xF800, 0x0000);
  GUI_Text(160, 0, (uint8_t *) "TIME: ", 0xF800, 0x0000);
  sprintf(buffer, "%d", elapsed_time);
  GUI_Text(208, 0, (uint8_t *) buffer, 0xF800, 0x0000);
- GUI_Text(0, 300, (uint8_t *) "LIFE COUNT: ", 0xF800, 0x0000);
  DrawLife();
+ sprintf(buffer, "%d", life);
+ GUI_Text(16,300,(uint8_t *) buffer, 0xF800, 0x0000);
+ GUI_Text(24,300,(uint8_t *) "X", 0xF800, 0x0000);
 }
 void Draw_Wall(int current_X, int current_Y, int color, int ratio1, int ratio2){
  int i, j;
@@ -2331,7 +2518,7 @@ void Draw_Point(int current_X, int current_Y){
 
  LCD_SetPoint(current_X + 4, current_Y + 4, 0xF81F);
 }
-void Draw_Circle(int color, int radius){
+void Draw_Circle(int current_X, int current_Y ,int color, int radius){
  int r = radius / 2;
   int x, y;
 
@@ -2355,12 +2542,33 @@ void Draw_Circle(int color, int radius){
         if (!(dy == -r || dy == r || dx == -r || dx == r ||
                       (direction == 0 && dx == -r) || (direction == 1 && (dy == r || dx == r || dx == -r)) ||
                       (direction == 2 && dx == r) || (direction == 3 && (dy == -r || dx == r || dx == -r))) && !mouth) {
-                    LCD_SetPoint((pacman.posX * 8 + 8) + x + r, (pacman.posY * 8 + 16) + y + r, color);
+                    LCD_SetPoint((current_X * 8 + 8) + x + r, (current_Y * 8 + 16) + y + r, color);
                 }
             }
         }
     }
 }
+void Draw_Ghost(int current_X, int current_Y, int color) {
+ int x,y;
+     for (y = 0; y < 8; y++) {
+        for (x = 0; x < 8; x++) {
+            if (ghost[y][x]) {
+                LCD_SetPoint((current_X * 8 + 8) + x, (current_Y * 8 + 16) + y, color);
+            }
+        }
+    }
+
+    // Draw the eyes (white pixels)
+    for (y = 0; y < 8; y++) {
+        for (x = 0; x < 8; x++) {
+            if (eye_sprite[y][x]) {
+                LCD_SetPoint((current_X * 8 + 8) + x, (current_Y * 8 + 16) + y, 0xFFFF);
+            }
+        }
+    }
+}
+
+
 void Move_Pacman(){
 
 
@@ -2399,49 +2607,65 @@ void Move_Pacman(){
    }
    break;
  }
-  Draw_Circle(0xFFE0, 8);
+  Draw_Circle(pacman.posX, pacman.posY, 0xFFE0, 8);
   if(board[pacman.posY][pacman.posX]==2){
       board[pacman.posY][pacman.posX]=0;
       punteggio+=10;
      }
-  if(board[pacman.posY][pacman.posX]==3){
+  if(board[pacman.posY][pacman.posX]==3 && stateOfGame!=0 && stateOfGame!=4){
       board[pacman.posY][pacman.posX]=0;
       punteggio+=50;
+      if (stateOfGame!=0){
+       stateOfGame = 2;
+        timeToExpel=elapsed_time+10;}
      }
   if(punteggio>=checkpoint){
       life++;
-      DrawLife();
       checkpoint += 1000;
   }
-  sprintf(buffer, "%d", punteggio);
-  GUI_Text(52, 0, (uint8_t *) buffer, 0xF800, 0x0000);
-  if(punteggio==50*6+10*234)
+  //UpdateGameStatus(punteggio, life, 60 - elapsed_time);
+  //sprintf(buffer, "%d", punteggio);
+  //GUI_Text(52, 0, (uint8_t *) buffer, 0xF800, 0x0000);
+
+  if(punteggio==50*6+10*234 + kills * 100)
    Victory();
 }
 
 
 void PauseHandler(){
- static char pause = 0;
- if(pause){
+ if(paused){
+    if(startup){
+    startup=0;
+    wait = elapsed_time % 10;
+    if(wait<6)
+     wait=6;
+    disable_timer(1);
+    elapsed_time=0;
+    }
     Draw_Wall(96, 120, 0x0000, 48, 24);
-    pause=0;
-    enable_timer(0);
-    enable_timer(1);}
+    paused=0;
+    enable_timer(1);
+       //enable_timer(2);
+    }
  else{
-     disable_timer(0);
      disable_timer(1);
-     pause=1;
+     //disable_timer(2);
+     paused=1;
      GUI_Text(100, 124, (uint8_t *) "PAUSE", 0xF800, 0xFFFF);
+    if(startup){
+      enable_timer(1);
+      enable_timer(3);}
     }
 }
 
 void GameOver(){
-   disable_timer(0);
+   disable_timer(3);
    disable_timer(1);
+   //disable_timer(2);
    init_RIT(0xFFFFFFF);
    GUI_Text(84, 124, (uint8_t *) "GAME OVER", 0xF800, 0xFFFF);}
 void Victory(){
-   disable_timer(0);
+   disable_timer(3);
    disable_timer(1);
    init_RIT(0xFFFFFFF);
    GUI_Text(88, 124, (uint8_t *) "VICTORY!", 0x001F, 0xF800);}
@@ -2467,38 +2691,25 @@ void DrawLife(){
             float right = fx2 * fy3; // fx^2 * fy^3
 
             if (left3 - right <= 0) {
-                LCD_SetPoint(life * 16 + x + 80, 300 + y, 0xF800);
+                LCD_SetPoint(x, 300 + y, 0xF800);
             }
         }
     }
 }
 void Generate_Power_Pills_Coord(){
- time_t t;
  int i = 0, x, y;
-
- srand((unsigned)time(&t));
- wait = rand() % 10;
  do{
-  x = rand() % 28;
-  y = rand() % 31;
-
+  x = rand() % punteggio;
+  y = x % 31;
+  x = x % 28;
   if(board[y][x] == 2){
-   board[y][x] = 0;
-   power_pills_coord[i].posX = x;
-   power_pills_coord[i].posY = y;
+   board[y][x] = 3;
    i++;
+   Draw_PowerPills(x*8 + 8,y*8 + 16,0xF81F);
   }
  } while(i < 6);
 }
 
-void Place_Power_Pills(){
- int i;
-
- for(i = 0; i < 6; i++){
-  board[power_pills_coord[i].posY][power_pills_coord[i].posX] = 3;
-  Draw_PowerPills((power_pills_coord[i].posX * 8) + 8, (power_pills_coord[i].posY * 8) + 16, 0xF81F);
- }
-}
 void Draw_PowerPills(int current_X, int current_Y, int color) {
     int r = 8 / 3; // Raggio del cerchio
     int x, y;
@@ -2529,3 +2740,215 @@ void Draw_Brick(int current_X, int current_Y, int color, int ratio){
  LCD_DrawLine(current_X + ratio - 1, current_Y + ratio - 1, current_X, current_Y + ratio - 1, color);
  LCD_DrawLine(current_X + ratio - 1, current_Y + ratio - 1, current_X + ratio - 1, current_Y , color);
 }
+
+
+void MoveBlinky(){
+ int direction,color;
+
+ Draw_Wall((blinky.posX*8)+8, (blinky.posY*8) +16, 0x0000, 8, 8);
+ switch(board[blinky.posY][blinky.posX]){
+
+  case 2:
+     Draw_Point((blinky.posX * 8) + 8, (blinky.posY * 8) + 16);
+  break;
+  case 3:
+   Draw_PowerPills((blinky.posX * 8) + 8, (blinky.posY * 8) + 16,0xF81F);
+  break;
+ }
+ switch(stateOfGame){
+  case 0:
+   direction = escapeRoute[step];
+   step++;
+   if(step==6){
+    stateOfGame=1;
+    LCD_DrawLine(112, 116, 128, 116, 0xF81F);
+   }
+   color=0xF800;
+   break;
+  case 1:
+   direction = chaseMode();
+   color=0xF800;
+   break;
+  case 2:
+   direction = frightenedMode();
+   color=0x001F;
+ }
+ switch(direction){
+  case 0:
+   blinky.posX --;
+   break;
+  case 1:
+   blinky.posX++;
+   break;
+  case 2:
+   blinky.posY --;
+   break;
+  case 3:
+   blinky.posY++;
+   break;
+ }
+ Draw_Ghost(blinky.posX, blinky.posY, color);
+}
+
+char frightenedMode(){ char distX, distY, rndm;
+  static char lastMove = 4;
+    distX = pacman.posX - blinky.posX;
+    distY = pacman.posY - blinky.posY;
+
+    if (distX < 0)
+        distX *= -1;
+
+    if (distY < 0)
+        distY *= -1;
+  if( blinky.posX== 27 || blinky.posX==0){
+   lastMove = blinky.posX==0 ? 1 : 0;
+   return lastMove;
+  } else{
+   if (distY > distX) {
+     if (blinky.posY < pacman.posY && board[blinky.posY - 1][blinky.posX] != 1 && lastMove != 3){
+       lastMove=2;
+       return 2;}
+     else if (blinky.posY > pacman.posY && board[blinky.posY + 1][blinky.posX] != 1 && lastMove != 2){
+       lastMove=3;
+       return 3;}
+     else if (blinky.posX < pacman.posX && board[blinky.posY][blinky.posX - 1] != 1 && lastMove != 1){
+       return 0;}
+     else if (blinky.posX > pacman.posX && board[blinky.posY][blinky.posX + 1] != 1 && lastMove != 0){
+       return 1;}
+   } else {
+     if (blinky.posX < pacman.posX && board[blinky.posY][blinky.posX - 1] != 1 && lastMove != 1){
+      lastMove=0;
+       return 0;}
+     else if (blinky.posX > pacman.posX && board[blinky.posY][blinky.posX + 1] != 1 && lastMove != 0){
+      lastMove=1;
+       return 1;}
+     if (blinky.posY < pacman.posY && board[blinky.posY - 1][blinky.posX] != 1 && lastMove != 3){
+       lastMove=2;
+       return 2;}
+     else if (blinky.posY > pacman.posY && board[blinky.posY + 1][blinky.posX] != 1 && lastMove != 2){
+      lastMove=3;
+       return 3;}
+   }}
+
+   if (board[blinky.posY - 1][blinky.posX] != 1 && lastMove != 3){
+      lastMove=2;
+            return 2;}
+    else if (board[blinky.posY][blinky.posX - 1] != 1 && lastMove != 1){
+     lastMove=0;
+            return 0;}
+        else if ( board[blinky.posY + 1][blinky.posX] != 1 && lastMove != 2){
+     lastMove=3;
+            return 3;}
+        else if (board[blinky.posY][blinky.posX + 1] != 1 && lastMove != 0){
+     lastMove=1;
+            return 1;}
+    return -1;}
+char chaseMode() {
+    char distX, distY, rndm;
+  static char lastMove = 4;
+    distX = pacman.posX - blinky.posX;
+    distY = pacman.posY - blinky.posY;
+
+    if (distX < 0)
+        distX *= -1;
+
+    if (distY < 0)
+        distY *= -1;
+if( blinky.posX== 27 || blinky.posX==0){
+   lastMove = blinky.posX==0 ? 1 : 0;
+   return lastMove;
+  } else{
+    if (distY > distX) {
+        if (blinky.posY > pacman.posY && board[blinky.posY - 1][blinky.posX] != 1 && lastMove != 3){
+      lastMove=2;
+            return 2;}
+        else if (blinky.posY < pacman.posY && board[blinky.posY + 1][blinky.posX] != 1 && lastMove != 2){
+      lastMove=3;
+            return 3;}
+        else if (blinky.posX > pacman.posX && board[blinky.posY][blinky.posX - 1] != 1 && lastMove != 1){
+            return 0;}
+        else if (blinky.posX < pacman.posX && board[blinky.posY][blinky.posX + 1] != 1 && lastMove != 0){
+            return 1;}
+    } else {
+        if (blinky.posX > pacman.posX && board[blinky.posY][blinky.posX - 1] != 1 && lastMove != 1){
+     lastMove=0;
+            return 0;}
+        else if (blinky.posX < pacman.posX && board[blinky.posY][blinky.posX + 1] != 1 && lastMove != 0){
+     lastMove=1;
+            return 1;}
+        if (blinky.posY > pacman.posY && board[blinky.posY - 1][blinky.posX] != 1 && lastMove != 3){
+      lastMove=2;
+            return 2;}
+        else if (blinky.posY < pacman.posY && board[blinky.posY + 1][blinky.posX] != 1 && lastMove != 2){
+     lastMove=3;
+            return 3;}
+    }}
+
+    if (board[blinky.posY - 1][blinky.posX] != 1 && lastMove != 3){
+      lastMove=2;
+            return 2;}
+    else if (board[blinky.posY][blinky.posX - 1] != 1 && lastMove != 1){
+     lastMove=0;
+            return 0;}
+        else if ( board[blinky.posY + 1][blinky.posX] != 1 && lastMove != 2){
+     lastMove=3;
+            return 3;}
+        else if (board[blinky.posY][blinky.posX + 1] != 1 && lastMove != 0){
+     lastMove=1;
+            return 1;}
+    return -1;
+}
+void sendResults(){
+ CAN_TxMsg.data[0] = ((punteggio) & 0xFF00) >> 8;
+ CAN_TxMsg.data[1] = punteggio & 0xFF;
+ CAN_TxMsg.data[2] = life;
+ uint8_t tempo;
+ tempo = 60 -elapsed_time;
+ CAN_TxMsg.data[3] = tempo;
+ CAN_TxMsg.len=4;
+ CAN_TxMsg.id=2;
+ CAN_TxMsg.format=0;
+ CAN_TxMsg.type=0;
+ CAN_wrMsg (1, &CAN_TxMsg);
+
+}
+void respawnBlinky(){
+stateOfGame=0;
+step=0;
+//enable_timer(2);
+ }
+
+void UpdateGameStatus(int score, char vite, char time){
+  sprintf(buffer, "%d", score);
+  GUI_Text(52, 0, (uint8_t *) buffer, 0xF800, 0x0000);
+  sprintf(buffer, "%d", time);
+ if(time<10){
+  Draw_Wall(216,0,0x0000,8,16);}
+  GUI_Text(208, 0, (uint8_t *) buffer, 0xF800, 0x0000);
+  sprintf(buffer, "%d", vite);
+  GUI_Text(16,300,(uint8_t *) buffer, 0xF800, 0x0000);
+}
+void collisionManager(){
+ switch(stateOfGame){
+    case 1:
+     if(blinky.posX==pacman.posX && blinky.posY == pacman.posY){
+      life--;
+      Draw_Wall(life*8*2+80, 300, 0x0000, 8*2,8*2);
+      if(life==0) GameOver();
+      Draw_Wall((pacman.posX*8)+8, (pacman.posY*8) +16, 0x0000, 8, 8);
+      pacman.posX=13;
+      pacman.posY=23;
+      Draw_Circle(pacman.posX, pacman.posY, 0xFFE0, 8);}
+     break;
+    case 2:
+     if(blinky.posX==pacman.posX && blinky.posY == pacman.posY){
+      stateOfGame=4;
+      respawn=elapsed_time+3;
+      punteggio += 50;
+      kills++;
+      blinky.posX=11;
+      blinky.posY=15;}
+     break;
+      default:
+       break;
+}}

@@ -8,8 +8,8 @@
 # 24 "Source/TouchPanel/TouchPanel.c"
 # 1 "Source/TouchPanel\\../GLCD/GLCD.h" 1
 # 26 "Source/TouchPanel\\../GLCD/GLCD.h"
-# 1 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h" 1
-# 41 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h"
+# 1 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 1
+# 41 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 typedef enum IRQn
 {
 
@@ -61,7 +61,7 @@ typedef enum IRQn
   USBActivity_IRQn = 33,
   CANActivity_IRQn = 34,
 } IRQn_Type;
-# 106 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h"
+# 106 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 # 1 "./Source/CMSIS_core\\core_cm3.h" 1
 # 29 "./Source/CMSIS_core\\core_cm3.h" 3
 
@@ -69,8 +69,8 @@ typedef enum IRQn
 
 
 
-# 1 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 1 3
-# 56 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 3
+# 1 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 1 3
+# 56 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 3
 typedef signed char int8_t;
 typedef signed short int int16_t;
 typedef signed int int32_t;
@@ -971,9 +971,9 @@ static __inline int32_t ITM_CheckChar (void)
     return (1);
   }
 }
-# 107 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h" 2
-# 1 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\system_LPC17xx.h" 1
-# 49 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\system_LPC17xx.h"
+# 107 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 2
+# 1 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\system_LPC17xx.h" 1
+# 49 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\system_LPC17xx.h"
 extern uint32_t SystemCoreClock;
 
 
@@ -990,8 +990,8 @@ extern void SystemInit (void);
 
 
 extern void SystemCoreClockUpdate (void);
-# 108 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h" 2
-# 120 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h"
+# 108 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 2
+# 120 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 typedef struct
 {
   volatile uint32_t FLASHCFG;
@@ -1237,6 +1237,7 @@ typedef struct
   volatile uint8_t FDR;
        uint8_t RESERVED5[7];
   volatile uint8_t TER;
+       uint8_t RESERVED6[3];
 } LPC_UART_TypeDef;
 
 
@@ -1250,6 +1251,7 @@ typedef struct
   };
   union {
   volatile uint8_t DLM;
+       uint8_t RESERVED1[3];
   volatile uint32_t IER;
   };
   union {
@@ -1257,26 +1259,27 @@ typedef struct
   volatile uint8_t FCR;
   };
   volatile uint8_t LCR;
-       uint8_t RESERVED1[3];
-  volatile uint8_t MCR;
        uint8_t RESERVED2[3];
-  volatile const uint8_t LSR;
+  volatile uint8_t MCR;
        uint8_t RESERVED3[3];
-  volatile const uint8_t MSR;
+  volatile const uint8_t LSR;
        uint8_t RESERVED4[3];
-  volatile uint8_t SCR;
+  volatile const uint8_t MSR;
        uint8_t RESERVED5[3];
+  volatile uint8_t SCR;
+       uint8_t RESERVED6[3];
   volatile uint32_t ACR;
-       uint32_t RESERVED6;
-  volatile uint32_t FDR;
        uint32_t RESERVED7;
+  volatile uint32_t FDR;
+       uint32_t RESERVED8;
   volatile uint8_t TER;
-       uint8_t RESERVED8[27];
+       uint8_t RESERVED9[27];
   volatile uint8_t RS485CTRL;
-       uint8_t RESERVED9[3];
-  volatile uint8_t ADRMATCH;
        uint8_t RESERVED10[3];
+  volatile uint8_t ADRMATCH;
+       uint8_t RESERVED11[3];
   volatile uint8_t RS485DLY;
+       uint8_t RESERVED12[3];
 } LPC_UART1_TypeDef;
 
 
@@ -1459,6 +1462,7 @@ typedef struct
   volatile uint32_t DACR;
   volatile uint32_t DACCTRL;
   volatile uint16_t DACCNTVAL;
+       uint16_t RESERVED;
 } LPC_DAC_TypeDef;
 
 
@@ -2144,9 +2148,9 @@ void TouchPanel_Calibrate(void)
   for(i=0;i<3;i++)
   {
 
+  DelayUS(1000 * 500);
 
 
-  DelayUS(1000 * 50);
 
    DrawCross(DisplaySample[i].x,DisplaySample[i].y);
    do

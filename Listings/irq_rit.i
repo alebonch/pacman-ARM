@@ -6,8 +6,8 @@
 # 1 "<built-in>" 2
 # 1 "Source/RIT/IRQ_RIT.c" 2
 # 10 "Source/RIT/IRQ_RIT.c"
-# 1 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h" 1
-# 41 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h"
+# 1 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 1
+# 41 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 typedef enum IRQn
 {
 
@@ -59,7 +59,7 @@ typedef enum IRQn
   USBActivity_IRQn = 33,
   CANActivity_IRQn = 34,
 } IRQn_Type;
-# 106 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h"
+# 106 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 # 1 "./Source/CMSIS_core\\core_cm3.h" 1
 # 29 "./Source/CMSIS_core\\core_cm3.h" 3
 
@@ -67,8 +67,8 @@ typedef enum IRQn
 
 
 
-# 1 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 1 3
-# 56 "C:\\Users\\alebo\\AppData\\Local\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 3
+# 1 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 1 3
+# 56 "C:\\Keil_v5\\ARM\\ARMCLANG\\bin\\..\\include\\stdint.h" 3
 typedef signed char int8_t;
 typedef signed short int int16_t;
 typedef signed int int32_t;
@@ -969,9 +969,9 @@ static __inline int32_t ITM_CheckChar (void)
     return (1);
   }
 }
-# 107 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h" 2
-# 1 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\system_LPC17xx.h" 1
-# 49 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\system_LPC17xx.h"
+# 107 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 2
+# 1 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\system_LPC17xx.h" 1
+# 49 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\system_LPC17xx.h"
 extern uint32_t SystemCoreClock;
 
 
@@ -988,8 +988,8 @@ extern void SystemInit (void);
 
 
 extern void SystemCoreClockUpdate (void);
-# 108 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h" 2
-# 120 "C:/Users/alebo/AppData/Local/Arm/Packs/Keil/LPC1700_DFP/2.6.0/Device/Include\\LPC17xx.h"
+# 108 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 2
+# 120 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 typedef struct
 {
   volatile uint32_t FLASHCFG;
@@ -1235,6 +1235,7 @@ typedef struct
   volatile uint8_t FDR;
        uint8_t RESERVED5[7];
   volatile uint8_t TER;
+       uint8_t RESERVED6[3];
 } LPC_UART_TypeDef;
 
 
@@ -1248,6 +1249,7 @@ typedef struct
   };
   union {
   volatile uint8_t DLM;
+       uint8_t RESERVED1[3];
   volatile uint32_t IER;
   };
   union {
@@ -1255,26 +1257,27 @@ typedef struct
   volatile uint8_t FCR;
   };
   volatile uint8_t LCR;
-       uint8_t RESERVED1[3];
-  volatile uint8_t MCR;
        uint8_t RESERVED2[3];
-  volatile const uint8_t LSR;
+  volatile uint8_t MCR;
        uint8_t RESERVED3[3];
-  volatile const uint8_t MSR;
+  volatile const uint8_t LSR;
        uint8_t RESERVED4[3];
-  volatile uint8_t SCR;
+  volatile const uint8_t MSR;
        uint8_t RESERVED5[3];
+  volatile uint8_t SCR;
+       uint8_t RESERVED6[3];
   volatile uint32_t ACR;
-       uint32_t RESERVED6;
-  volatile uint32_t FDR;
        uint32_t RESERVED7;
+  volatile uint32_t FDR;
+       uint32_t RESERVED8;
   volatile uint8_t TER;
-       uint8_t RESERVED8[27];
+       uint8_t RESERVED9[27];
   volatile uint8_t RS485CTRL;
-       uint8_t RESERVED9[3];
-  volatile uint8_t ADRMATCH;
        uint8_t RESERVED10[3];
+  volatile uint8_t ADRMATCH;
+       uint8_t RESERVED11[3];
   volatile uint8_t RS485DLY;
+       uint8_t RESERVED12[3];
 } LPC_UART1_TypeDef;
 
 
@@ -1457,6 +1460,7 @@ typedef struct
   volatile uint32_t DACR;
   volatile uint32_t DACCTRL;
   volatile uint16_t DACCNTVAL;
+       uint16_t RESERVED;
 } LPC_DAC_TypeDef;
 
 
@@ -1789,7 +1793,77 @@ extern void reset_RIT( void );
 extern void RIT_IRQHandler (void);
 # 12 "Source/RIT/IRQ_RIT.c" 2
 # 1 "./Source/timer\\timer.h" 1
-# 14 "./Source/timer\\timer.h"
+# 12 "./Source/timer\\timer.h"
+# 1 "./Source/timer\\../music/music.h" 1
+
+
+
+
+//Default: 1.65
+
+
+
+
+
+
+
+typedef char BOOL;
+
+
+
+typedef enum note_durations
+{
+ time_semibiscroma = (unsigned int)(0x17D7840 * 1 * 1.5 / 64.0f + 0.5), // 1/128
+ time_biscroma = (unsigned int)(0x17D7840 * 1 * 1.5 / 32.0f + 0.5), // 1/64
+ time_semicroma = (unsigned int)(0x17D7840 * 1 * 1.5 / 16.0f + 0.5), // 1/32
+ time_croma = (unsigned int)(0x17D7840 * 1 * 1.5 / 8.0f + 0.5), // 1/16
+ time_semiminima = (unsigned int)(0x17D7840 * 1 * 1.5 / 4.0f + 0.5), // 1/4
+ time_minima = (unsigned int)(0x17D7840 * 1 * 1.5 / 2.0f + 0.5), // 1/2
+ time_semibreve = (unsigned int)(0x17D7840 * 1 * 1.5 + 0.5), // 1
+} NOTE_DURATION;
+
+typedef enum frequencies {
+    // Existing frequencies
+    a2b = 5351, // 103Hz k=5351
+    b2 = 4500, // 123Hz k=4500
+    c3b = 4370, // 127Hz k=4370
+    c3 = 4240, // 131Hz k=4240
+    d3 = 3779, // 147Hz k=3779
+    e3 = 3367, // 165Hz k=3367
+    f3 = 3175, // 175Hz k=3175
+    g3 = 2834, // 196Hz k=2834
+    a3b = 2670, // 208Hz k=2670
+    a3 = 2525, // 220Hz k=2525
+    b3 = 2249, // 247Hz k=2249
+    c4 = 2120, // 262Hz k=2120
+    d4 = 1890, // 294Hz k=1890
+    e4 = 1684, // 330Hz k=1684
+    f4 = 1592, // 349Hz k=1592
+    g4 = 1417, // 392Hz k=1417
+    a4 = 1263, // 440Hz k=1263
+    b4 = 1125, // 494Hz k=1125
+    c5 = 1062, // 523Hz k=1062
+  b5 = 55, // 987.77Hz k=55 B5
+    // New frequencies needed for Pacman theme
+    d5 = 946, // 587Hz k=946
+    e5 = 843, // 659Hz k=843
+    f5 = 795, // 698Hz k=795
+    g5 = 709, // 784Hz k=709
+    a5 = 631, // 880Hz k=631
+
+    pause = 0 // DO NOT SOUND
+} FREQUENCY;
+
+typedef struct
+{
+ FREQUENCY freq;
+ NOTE_DURATION duration;
+} NOTE;
+
+void playNote(NOTE note);
+BOOL isNotePlaying(void);
+# 13 "./Source/timer\\timer.h" 2
+
 extern uint32_t init_timer( uint8_t timer_num, uint32_t timerInterval );
 extern void enable_timer( uint8_t timer_num );
 extern void disable_timer( uint8_t timer_num );
@@ -1797,29 +1871,44 @@ extern void reset_timer( uint8_t timer_num );
 
 extern void TIMER0_IRQHandler (void);
 extern void TIMER1_IRQHandler (void);
+extern void TIMER2_IRQHandler (void);
+extern void TIMER3_IRQHandler (void);
 # 13 "Source/RIT/IRQ_RIT.c" 2
 # 1 "./Source\\Imports/imports.h" 1
-# 15 "./Source\\Imports/imports.h"
+# 28 "./Source\\Imports/imports.h"
 struct pg{
  int posX;
  int posY;
 };
 
+typedef struct {
+    int row;
+    int col;
+    int distance;
+} Cell;
 
 void InitializeGame();
 void Draw_Wall(int current_X, int current_Y, int color, int ratio1, int ratio2);
 void Draw_Point(int current_X, int current_Y);
-void Draw_Circle(int color, int radius);
+void Draw_Circle(int current_X, int current_Y, int color, int radius);
 void Move_Pacman();
 void PauseHandler();
 void Victory();
 void GameOver();
 void DrawLife();
-void Place_Power_Pills();
 void Generate_Power_Pills_Coord();
 void Draw_PowerPills(int current_X, int current_Y, int color);
 void Draw_Map();
 void Draw_Brick(int current_X, int current_Y, int color, int ratio);
+void Draw_Ghost(int current_X, int current_Y, int color);
+int is_valid(int x, int y, char board[31][28], int visited[31][28]);
+void MoveBlinky();
+char chaseMode();
+char frightenedMode();
+void respawnBlinky();
+void UpdateGameStatus(int score, char vite, char time);
+void sendResults();
+void collisionManager();
 # 14 "Source/RIT/IRQ_RIT.c" 2
 # 1 "Source/RIT\\../GLCD/GLCD.h" 1
 # 91 "Source/RIT\\../GLCD/GLCD.h"
@@ -1831,60 +1920,107 @@ void LCD_DrawLine( uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1 , uint16_t
 void PutChar( uint16_t Xpos, uint16_t Ypos, uint8_t ASCI, uint16_t charColor, uint16_t bkColor );
 void GUI_Text(uint16_t Xpos, uint16_t Ypos, uint8_t *str,uint16_t Color, uint16_t bkColor);
 # 15 "Source/RIT/IRQ_RIT.c" 2
-# 26 "Source/RIT/IRQ_RIT.c"
+# 25 "Source/RIT/IRQ_RIT.c"
+NOTE song[] = {
+    // First measure (Intro theme)
+    {b4, time_croma}, // B4 eighth
+    {f4, time_croma}, // F4 eighth
+    {d5, time_croma}, // D5 eighth
+    {b4, time_croma}, // B4 eighth
+    {c5, time_croma}, // C5 eighth
+    {g4, time_croma}, // G4 eighth
+
+    // Second measure
+    {e4, time_croma}, // E4 eighth
+    {g4, time_croma}, // G4 eighth
+    {f4, time_croma}, // F4 eighth
+    {d4, time_croma}, // D4 eighth
+    {b3, time_croma}, // B3 eighth
+    {f3, time_croma}, // F3 eighth
+
+    // Third measure (Chase theme)
+    {g4, time_croma}, // G4 eighth
+    {a4, time_croma}, // A4 eighth
+    {b4, time_croma}, // B4 eighth
+    {c5, time_croma}, // C5 eighth
+    {d5, time_croma}, // D5 eighth
+    {f5, time_croma}, // F5 eighth
+
+    // Fourth measure
+    {e5, time_croma}, // E5 eighth
+    {d5, time_croma}, // D5 eighth
+    {c5, time_croma}, // C5 eighth
+    {b4, time_croma}, // B4 eighth
+    {a4, time_croma}, // A4 eighth
+    {g4, time_croma}, // G4 eighth
+
+    // Fifth measure (Power pellet theme)
+    {b4, time_croma}, // B4 eighth
+    {f4, time_croma}, // F4 eighth
+    {g4, time_croma}, // G4 eighth
+    {a4, time_croma}, // A4 eighth
+    {b4, time_croma}, // B4 eighth
+    {c5, time_croma}, // C5 eighth
+
+    // Sixth measure
+    {d5, time_croma}, // D5 eighth
+    {e5, time_croma}, // E5 eighth
+    {f5, time_croma}, // F5 eighth
+    {g5, time_croma}, // G5 eighth
+    {a5, time_croma}, // A5 eighth
+    {b5, time_croma}, // B5 eighth
+
+    // Seventh measure (Ending jingle)
+    {f5, time_croma}, // F5 eighth
+    {e5, time_croma}, // E5 eighth
+    {d5, time_croma}, // D5 eighth
+    {c5, time_croma}, // C5 eighth
+    {b4, time_croma}, // B4 eighth
+    {pause, time_semiminima},// Pause (final note)
+};
+
+extern uint8_t button_down;
+int currentNote = 0;
+int ticks = 0;
+
 void RIT_IRQHandler (void)
 {
- static int down=0;
- static int down0=0;
- static uint8_t position=0;
+   if((((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 & (1 << 20)) == 0){
+    button_down++;
+    if((((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIOPIN & (1<<10)) == 0){
 
- if((((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 & (1 << 20)) == 0){
-  down++;
-  if((((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIOPIN & (1<<10)) == 0){ //key1
-   reset_RIT(); // si può rimuovere
-   switch(down){
-    case 1:
-    PauseHandler();
-     break;
-    default:
-     break;
+
+     switch(button_down){
+      case 1:
+       PauseHandler();
+       break;
+      default:
+       break;
+     }
+    }
+    else{
+     button_down = 0;
+     disable_RIT();
+     reset_RIT();
+     enable_RIT();
+     __NVIC_EnableIRQ(EINT0_IRQn);
+     ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 20);
+    }
    }
-  }
-  else {
-   down=0;
-   disable_RIT();
-   reset_RIT();
-   __NVIC_EnableIRQ(EINT0_IRQn);
-   ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 22);
+
+ if(!isNotePlaying())
+ {
+  ++ticks;
+  if(ticks == 1)
+  {
+   ticks = 0;
+   playNote(song[currentNote++]);
   }
  }
 
-
- if((((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 & (1 << 20)) == 0){
-  down0++;
-  if((((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIOPIN & (1<<10)) == 0){ //int0
-   reset_RIT();
-   switch(down0){
-    case 1:
-     if( position == 0){
-      position = 7;
-
-     }
-     else{
-
-     }
-     break;
-    default:
-     break;
-   }
-  }
-  else {
-   down0=0;
-   disable_RIT();
-   reset_RIT();
-   __NVIC_EnableIRQ(EINT0_IRQn);
-   ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 20);
-  }
+ if(currentNote == (sizeof(song) / sizeof(song[0])))
+ {
+  currentNote=0;
  }
 
   ((LPC_RIT_TypeDef *) ((0x40080000UL) + 0x30000) )->RICTRL |= 0x1;

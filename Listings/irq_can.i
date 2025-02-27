@@ -1,18 +1,11 @@
-# 1 "Source/button_EXINT/lib_button.c"
+# 1 "Source/CAN/IRQ_CAN.c"
 # 1 "<built-in>" 1
 # 1 "<built-in>" 3
 # 393 "<built-in>" 3
 # 1 "<command line>" 1
 # 1 "<built-in>" 2
-# 1 "Source/button_EXINT/lib_button.c" 2
-
-# 1 "Source/button_EXINT\\button.h" 1
-void BUTTON_init(void);
-
-void EINT1_IRQHandler(void);
-void EINT2_IRQHandler(void);
-void EINT3_IRQHandler(void);
-# 3 "Source/button_EXINT/lib_button.c" 2
+# 1 "Source/CAN/IRQ_CAN.c" 2
+# 16 "Source/CAN/IRQ_CAN.c"
 # 1 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h" 1
 # 41 "C:/Keil_v5/ARM/PACK/Keil/LPC1700_DFP/2.7.1/Device/Include\\LPC17xx.h"
 typedef enum IRQn
@@ -1789,28 +1782,152 @@ typedef struct
        uint32_t RESERVED8;
   volatile uint32_t Module_ID;
 } LPC_EMAC_TypeDef;
-# 4 "Source/button_EXINT/lib_button.c" 2
+# 17 "Source/CAN/IRQ_CAN.c" 2
+# 1 "Source/CAN\\CAN.h" 1
+# 19 "Source/CAN\\CAN.h"
+# 1 "Source/CAN\\../TouchPanel/TouchPanel.h" 1
+# 30 "Source/CAN\\../TouchPanel/TouchPanel.h"
+typedef struct POINT
+{
+   uint16_t x;
+   uint16_t y;
+}Coordinate;
+
+
+typedef struct Matrix
+{
+long double An,
+            Bn,
+            Cn,
+            Dn,
+            En,
+            Fn,
+            Divider ;
+} Matrix ;
+
+
+extern Coordinate ScreenSample[3];
+extern Coordinate DisplaySample[3];
+extern Matrix matrix ;
+extern Coordinate display ;
+# 76 "Source/CAN\\../TouchPanel/TouchPanel.h"
+void TP_Init(void);
+Coordinate *Read_Ads7846(void);
+void TouchPanel_Calibrate(void);
+void DrawCross(uint16_t Xpos,uint16_t Ypos);
+void TP_DrawPoint(uint16_t Xpos,uint16_t Ypos);
+uint8_t setCalibrationMatrix( Coordinate * displayPtr,Coordinate * screenPtr,Matrix * matrixPtr);
+uint8_t getDisplayPoint(Coordinate * displayPtr,Coordinate * screenPtr,Matrix * matrixPtr );
+# 20 "Source/CAN\\CAN.h" 2
 
 
 
 
-void BUTTON_init(void) {
 
-  ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 20);
-  ((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIODIR &= ~(1 << 10);
 
-  ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 22);
-  ((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIODIR &= ~(1 << 11);
+extern uint32_t result;
+extern uint8_t icr;
 
-  ((LPC_PINCON_TypeDef *) ((0x40000000UL) + 0x2C000) )->PINSEL4 |= (1 << 24);
-  ((LPC_GPIO_TypeDef *) ((0x2009C000UL) + 0x00040) )->FIODIR &= ~(1 << 12);
+typedef struct {
+  unsigned int id;
+  unsigned char data[8];
+  unsigned char len;
+  unsigned char format;
+  unsigned char type;
+} CAN_msg;
 
-  ((LPC_SC_TypeDef *) ((0x40080000UL) + 0x7C000) )->EXTMODE = 0x7;
 
-  __NVIC_EnableIRQ(EINT2_IRQn);
- __NVIC_SetPriority(EINT2_IRQn, 1);
-  __NVIC_EnableIRQ(EINT1_IRQn);
- __NVIC_SetPriority(EINT1_IRQn, 2);
-  __NVIC_EnableIRQ(EINT0_IRQn);
- __NVIC_SetPriority(EINT0_IRQn, 0);
+void CAN_setup (uint32_t ctrl);
+void CAN_start (uint32_t ctrl);
+void CAN_waitReady (uint32_t ctrl);
+void CAN_wrMsg (uint32_t ctrl, CAN_msg *msg);
+void CAN_rdMsg (uint32_t ctrl, CAN_msg *msg);
+void CAN_wrFilter (uint32_t ctrl, uint32_t id, uint8_t filter_type);
+void CAN_Init (void);
+
+extern CAN_msg CAN_TxMsg;
+extern CAN_msg CAN_RxMsg;
+# 18 "Source/CAN/IRQ_CAN.c" 2
+# 1 "Source/CAN\\../GLCD/GLCD.h" 1
+# 91 "Source/CAN\\../GLCD/GLCD.h"
+void LCD_Initialization(void);
+void LCD_Clear(uint16_t Color);
+uint16_t LCD_GetPoint(uint16_t Xpos,uint16_t Ypos);
+void LCD_SetPoint(uint16_t Xpos,uint16_t Ypos,uint16_t point);
+void LCD_DrawLine( uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1 , uint16_t color );
+void PutChar( uint16_t Xpos, uint16_t Ypos, uint8_t ASCI, uint16_t charColor, uint16_t bkColor );
+void GUI_Text(uint16_t Xpos, uint16_t Ypos, uint8_t *str,uint16_t Color, uint16_t bkColor);
+# 19 "Source/CAN/IRQ_CAN.c" 2
+# 1 "./Source\\Imports/imports.h" 1
+# 28 "./Source\\Imports/imports.h"
+struct pg{
+ int posX;
+ int posY;
+};
+
+typedef struct {
+    int row;
+    int col;
+    int distance;
+} Cell;
+
+void InitializeGame();
+void Draw_Wall(int current_X, int current_Y, int color, int ratio1, int ratio2);
+void Draw_Point(int current_X, int current_Y);
+void Draw_Circle(int current_X, int current_Y, int color, int radius);
+void Move_Pacman();
+void PauseHandler();
+void Victory();
+void GameOver();
+void DrawLife();
+void Generate_Power_Pills_Coord();
+void Draw_PowerPills(int current_X, int current_Y, int color);
+void Draw_Map();
+void Draw_Brick(int current_X, int current_Y, int color, int ratio);
+void Draw_Ghost(int current_X, int current_Y, int color);
+int is_valid(int x, int y, char board[31][28], int visited[31][28]);
+void MoveBlinky();
+char chaseMode();
+char frightenedMode();
+void respawnBlinky();
+void UpdateGameStatus(int score, char vite, char time);
+void sendResults();
+void collisionManager();
+# 20 "Source/CAN/IRQ_CAN.c" 2
+
+extern uint8_t icr ; //icr and result must be global in order to work with both real and simulated landtiger.
+extern uint32_t result;
+extern CAN_msg CAN_TxMsg;
+extern CAN_msg CAN_RxMsg;
+
+static int puntiRicevuti1 = 0;
+static int puntiInviati1 = 0;
+
+static int puntiRicevuti2 = 0;
+static int puntiInviati2 = 0;
+
+uint16_t val_RxCoordX = 0;
+uint16_t val_RxCoordY = 0;
+
+
+
+
+void CAN_IRQHandler (void) {
+
+ volatile uint16_t score;
+ volatile char vite, tempo;
+
+ icr = 0;
+ icr = (((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x48000) )->ICR | icr) & 0xFF;
+
+ if (icr & (1 << 0)) {
+  CAN_rdMsg(2, &CAN_RxMsg);
+  ((LPC_CAN_TypeDef *) ((0x40000000UL) + 0x48000) )->CMR = (1<<2);
+  score = (CAN_RxMsg.data[0] << 8);
+  score |= CAN_RxMsg.data[1];
+  vite = CAN_RxMsg.data[2];
+  tempo = CAN_RxMsg.data[3];
+  UpdateGameStatus( score, vite, tempo);
+ }
+
 }
